@@ -18,10 +18,12 @@ clean:
 debug:
 	DEBUG=1 $(MAKE) clean all && gdb $(EXE)
 
+rebuild: clean all
+
 run: all
 	$(EXE)
 
-rerun: clean all $(EXE)
+rerun: rebuild
 	$(EXE)
 
 $(EXE): $(OBJECTS)
