@@ -7,13 +7,13 @@ const int FPS = 10;
 const int TILE_SIZE = 40;
 
 enum {
-    PIECES_I,
-    PIECES_J,
-    PIECES_L,
-    PIECES_O,
-    PIECES_S,
-    PIECES_T,
-    PIECES_Z,
+    PIECE_I,
+    PIECE_J,
+    PIECE_L,
+    PIECE_O,
+    PIECE_S,
+    PIECE_T,
+    PIECE_Z,
     NUM_PIECES
 };
 
