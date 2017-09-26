@@ -18,6 +18,7 @@ enum {
 
 typedef struct {
     ALLEGRO_DISPLAY * display;
+    ALLEGRO_EVENT_QUEUE * events;
 
     struct {
         ALLEGRO_BITMAP * pieces[6];
@@ -65,6 +66,7 @@ void initialize(GAME_STATE * S)
 {
     ALLEGRO_BITMAP ** sprite = NULL;
     ALLEGRO_DISPLAY ** display = &S->display;
+    ALLEGRO_EVENT_QUEUE ** events = &S->events;
 
     if(!al_init()) {
         exit(1);
@@ -80,34 +82,40 @@ void initialize(GAME_STATE * S)
         exit(3);
     }
 
-    sprite = S->sprites.pieces;
+    *events = al_create_event_queue();
 
-    if(!create_piece_i(sprite)) {
+    if(*events == NULL) {
         exit(4);
     }
 
-    if(!create_piece_j(sprite)) {
+    sprite = S->sprites.pieces;
+
+    if(!create_piece_i(sprite)) {
         exit(5);
     }
 
-    if(!create_piece_l(sprite)) {
+    if(!create_piece_j(sprite)) {
         exit(6);
     }
 
-    if(!create_piece_o(sprite)) {
+    if(!create_piece_l(sprite)) {
         exit(7);
     }
 
-    if(!create_piece_s(sprite)) {
+    if(!create_piece_o(sprite)) {
         exit(8);
     }
 
-    if(!create_piece_t(sprite)) {
+    if(!create_piece_s(sprite)) {
         exit(9);
     }
 
-    if(!create_piece_z(sprite)) {
+    if(!create_piece_t(sprite)) {
         exit(10);
+    }
+
+    if(!create_piece_z(sprite)) {
+        exit(11);
     }
 }
 
