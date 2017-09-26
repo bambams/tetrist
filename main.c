@@ -48,6 +48,8 @@ int main(int argc, char * argv[])
 
     initialize(&S);
 
+    al_start_timer(S.timer);
+
     while(!S.quit) {
         ALLEGRO_EVENT ev;
 
