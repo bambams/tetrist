@@ -7,7 +7,7 @@ ifdef DEBUG
 endif
 
 EXE = game
-LIBS = $$(pkg-config --libs allegro-5 allegro_primitives-5)
+LIBS = $$(pkg-config --libs $(ALLEGRO_LIBS))
 OBJECTS = $(shell find -name '*.c' | sed -e 's/\.c$$/.o/')
 
 all: $(EXE)
