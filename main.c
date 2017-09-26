@@ -1,4 +1,5 @@
 #include <allegro5/allegro.h>
+#include <allegro5/allegro_native_dialog.h>
 #include <stdlib.h>
 
 const int TILE_SIZE = 40;

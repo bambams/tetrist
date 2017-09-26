@@ -1,4 +1,4 @@
-ALLEGRO_LIBS = allegro-5 allegro_primitives-5
+ALLEGRO_LIBS = allegro-5 allegro_dialog-5 allegro_primitives-5
 CC = gcc
 CFLAGS = $$(pkg-config --cflags $(ALLEGRO_LIBS))
 
