@@ -18,6 +18,8 @@ enum {
 };
 
 typedef struct {
+    int quit;
+
     ALLEGRO_DISPLAY * display;
     ALLEGRO_EVENT_QUEUE * events;
     ALLEGRO_TIMER * timer;
@@ -40,9 +42,34 @@ int create_piece_z(ALLEGRO_BITMAP **);
 
 int main(int argc, char * argv[])
 {
+    int redraw = 0;
     GAME_STATE S;
 
     initialize(&S);
+
+    while(!S.quit) {
+        ALLEGRO_EVENT ev;
+
+        al_wait_for_event(S.events, &ev);
+
+        switch(ev.type)
+        {
+            case ALLEGRO_EVENT_KEY_DOWN:
+                if(ev.keyboard.keycode == ALLEGRO_KEY_Q) {
+                    S.quit = 1;
+                }
+                break;
+            case ALLEGRO_EVENT_TIMER:
+                redraw = 1;
+                break;
+        }
+
+        if(redraw) {
+            al_clear_to_color(al_map_rgb(255, 255, 255));
+            al_draw_bitmap(S.sprites.pieces[PIECE_I], 0, 0, 0);
+            al_flip_display();
+        }
+    }
 
     deinitialize(&S);
 
@@ -68,6 +95,8 @@ void deinitialize(GAME_STATE * S)
 
 void initialize(GAME_STATE * S)
 {
+    S->quit = 0;
+
     ALLEGRO_BITMAP ** sprite = NULL;
     ALLEGRO_DISPLAY ** display = &S->display;
     ALLEGRO_EVENT_QUEUE ** events = &S->events;
