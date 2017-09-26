@@ -59,6 +59,7 @@ void deinitialize(GAME_STATE * S)
         *sprite = NULL;
     }
 
+    al_destroy_event_queue(S->events);
     al_destroy_display(S->display);
 }
 
