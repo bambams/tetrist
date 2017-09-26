@@ -1,6 +1,11 @@
 ALLEGRO_LIBS = allegro-5 allegro_primitives-5
 CC = gcc
 CFLAGS = $$(pkg-config --cflags $(ALLEGRO_LIBS))
+
+ifdef DEBUG
+	CFLAGS += -g
+endif
+
 EXE = game
 LIBS = $$(pkg-config --libs allegro-5 allegro_primitives-5)
 OBJECTS = $(shell find -name '*.c' | sed -e 's/\.c$$/.o/')
