@@ -22,6 +22,7 @@ typedef struct {
     } sprites;
 } GAME_STATE;
 
+void deinitialize(GAME_STATE *);
 void initialize(GAME_STATE *);
 int create_sprite(ALLEGRO_BITMAP **, int, int);
 int create_piece_i(ALLEGRO_BITMAP **);
@@ -38,7 +39,24 @@ int main(int argc, char * argv[])
 
     initialize(&S);
 
+    deinitialize(&S);
+
     return 0;
+}
+
+void deinitialize(GAME_STATE * S)
+{
+    int i, l;
+    ALLEGRO_BITMAP ** sprite = NULL;
+
+    sprite = S->sprites.pieces;
+
+    for(i=0,l=6; i<l; i++) {
+        al_destroy_bitmap(*sprite);
+        *sprite = NULL;
+    }
+
+    al_destroy_display(S->display);
 }
 
 void initialize(GAME_STATE * S)
