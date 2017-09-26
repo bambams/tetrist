@@ -55,6 +55,9 @@ int main(int argc, char * argv[])
 
         switch(ev.type)
         {
+            case ALLEGRO_EVENT_DISPLAY_CLOSE:
+                S.quit = 1;
+                break;
             case ALLEGRO_EVENT_KEY_DOWN:
                 if(ev.keyboard.keycode == ALLEGRO_KEY_Q) {
                     S.quit = 1;
