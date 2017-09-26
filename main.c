@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+const int FPS = 10;
 const int TILE_SIZE = 40;
 
 enum {
@@ -19,6 +20,7 @@ enum {
 typedef struct {
     ALLEGRO_DISPLAY * display;
     ALLEGRO_EVENT_QUEUE * events;
+    ALLEGRO_TIMER * timer;
 
     struct {
         ALLEGRO_BITMAP * pieces[6];
@@ -60,6 +62,7 @@ void deinitialize(GAME_STATE * S)
     }
 
     al_destroy_event_queue(S->events);
+    al_destroy_timer(S->timer);
     al_destroy_display(S->display);
 }
 
@@ -68,6 +71,7 @@ void initialize(GAME_STATE * S)
     ALLEGRO_BITMAP ** sprite = NULL;
     ALLEGRO_DISPLAY ** display = &S->display;
     ALLEGRO_EVENT_QUEUE ** events = &S->events;
+    ALLEGRO_TIMER ** timer = &S->timer;
 
     if(!al_init()) {
         exit(1);
@@ -82,6 +86,8 @@ void initialize(GAME_STATE * S)
     if(*display == NULL) {
         exit(3);
     }
+
+    *timer = al_create_timer(1.0/FPS);
 
     *events = al_create_event_queue();
 
