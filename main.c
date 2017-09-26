@@ -95,6 +95,8 @@ void deinitialize(GAME_STATE * S)
 
 void initialize(GAME_STATE * S)
 {
+    memset(S, 0, sizeof(GAME_STATE));
+
     S->quit = 0;
 
     ALLEGRO_BITMAP ** sprite = NULL;
