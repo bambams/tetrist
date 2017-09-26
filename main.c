@@ -96,6 +96,7 @@ void initialize(GAME_STATE * S)
     }
 
     al_register_event_source(*events, al_get_keyboard_event_source());
+    al_register_event_source(*events, al_get_timer_event_source(*timer));
 
     sprite = S->sprites.pieces;
 
