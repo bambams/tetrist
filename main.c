@@ -169,8 +169,10 @@ int create_sprite(ALLEGRO_BITMAP ** sprite, int w, int h)
 
 int create_piece_i(ALLEGRO_BITMAP ** sprite) {
     if(!create_sprite(++sprite, 4, 1)) {
-        exit(5);
+        return 0;
     }
+
+    return 1;
 }
 
 int create_piece_j(ALLEGRO_BITMAP ** sprite) {
