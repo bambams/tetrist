@@ -1,5 +1,6 @@
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_native_dialog.h>
+#include <allegro5/allegro_primitives.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -65,7 +66,8 @@ int main(int argc, char * argv[])
         }
 
         if(redraw) {
-            al_clear_to_color(al_map_rgb(255, 255, 255));
+            al_set_target_bitmap(al_get_backbuffer(S.display));
+            al_clear_to_color(al_map_rgb(0, 0, 0));
             al_draw_bitmap(S.sprites.pieces[PIECE_I], 0, 0, 0);
             al_flip_display();
         }
@@ -173,6 +175,11 @@ int create_piece_i(ALLEGRO_BITMAP ** sprite) {
     if(!create_sprite(sprite, 4, 1)) {
         return 0;
     }
+
+    al_set_target_bitmap(*sprite);
+    al_draw_filled_rectangle(0, 0,
+                             TILE_SIZE * 4, TILE_SIZE,
+                             al_map_rgb(0, 255, 255));
 
     return 1;
 }
