@@ -131,34 +131,38 @@ void initialize(GAME_STATE * S)
     al_register_event_source(*events, al_get_keyboard_event_source());
     al_register_event_source(*events, al_get_timer_event_source(*timer));
 
-    sprite = S->sprites.pieces;
-
-    if(!create_piece_i(sprite)) {
+    if(!al_init_primitives_addon()) {
         exit(5);
     }
 
-    if(!create_piece_j(++sprite)) {
+    sprite = S->sprites.pieces;
+
+    if(!create_piece_i(sprite)) {
         exit(6);
     }
 
-    if(!create_piece_l(++sprite)) {
+    if(!create_piece_j(++sprite)) {
         exit(7);
     }
 
-    if(!create_piece_o(++sprite)) {
+    if(!create_piece_l(++sprite)) {
         exit(8);
     }
 
-    if(!create_piece_s(++sprite)) {
+    if(!create_piece_o(++sprite)) {
         exit(9);
     }
 
-    if(!create_piece_t(++sprite)) {
+    if(!create_piece_s(++sprite)) {
         exit(10);
     }
 
-    if(!create_piece_z(++sprite)) {
+    if(!create_piece_t(++sprite)) {
         exit(11);
+    }
+
+    if(!create_piece_z(++sprite)) {
+        exit(12);
     }
 }
 
