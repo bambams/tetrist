@@ -70,7 +70,7 @@ int main(int argc, char * argv[])
 
         if(redraw) {
             al_set_target_bitmap(al_get_backbuffer(S.display));
-            al_clear_to_color(al_map_rgb(0, 0, 0));
+            al_clear_to_color(al_map_rgb(255, 255, 255));
             al_draw_bitmap(S.sprites.pieces[PIECE_I], 0, 0, 0);
             al_flip_display();
         }
