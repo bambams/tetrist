@@ -67,47 +67,47 @@ void initialize(GAME_STATE * S)
     ALLEGRO_DISPLAY ** display = &S->display;
 
     if(!al_init()) {
-        exit(-1);
+        exit(1);
     }
 
     if(!al_install_keyboard()) {
-        exit(-2);
+        exit(2);
     }
 
     *display = al_create_display(480, 640);
 
     if(*display == NULL) {
-        exit(-3);
+        exit(3);
     }
 
     sprite = S->sprites.pieces;
 
     if(!create_piece_i(sprite)) {
-        exit(-4);
+        exit(4);
     }
 
     if(!create_piece_j(sprite)) {
-        exit(-5);
+        exit(5);
     }
 
     if(!create_piece_l(sprite)) {
-        exit(-6);
+        exit(6);
     }
 
     if(!create_piece_o(sprite)) {
-        exit(-7);
+        exit(7);
     }
 
     if(!create_piece_s(sprite)) {
-        exit(-8);
+        exit(8);
     }
 
     if(!create_piece_t(sprite)) {
-        exit(-9);
+        exit(9);
     }
 
     if(!create_piece_z(sprite)) {
-        exit(-10);
+        exit(10);
     }
 }
 
@@ -122,7 +122,7 @@ int create_sprite(ALLEGRO_BITMAP ** sprite, int w, int h)
 
 int create_piece_i(ALLEGRO_BITMAP ** sprite) {
     if(!create_sprite(++sprite, 4, 1)) {
-        exit(-5);
+        exit(5);
     }
 }
 
