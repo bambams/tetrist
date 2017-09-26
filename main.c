@@ -88,6 +88,8 @@ void initialize(GAME_STATE * S)
         exit(4);
     }
 
+    al_register_event_source(*events, al_get_keyboard_event_source());
+
     sprite = S->sprites.pieces;
 
     if(!create_piece_i(sprite)) {
