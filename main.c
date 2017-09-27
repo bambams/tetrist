@@ -4,26 +4,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define black al_map_rgb(0, 0, 0)
-#define blue al_map_rgb(0, 0, 255)
-#define cyan al_map_rgb(0, 255, 255)
-#define green al_map_rgb(0, 255, 0)
-#define orange al_map_rgb(255, 165, 0)
-#define purple al_map_rgb(128, 0, 128)
-#define red al_map_rgb(255, 0, 0)
-#define white al_map_rgb(255, 255, 255)
-#define yellow al_map_rgb(255, 255, 0)
+#define black (al_map_rgb(0, 0, 0))
+#define blue (al_map_rgb(0, 0, 255))
+#define cyan (al_map_rgb(0, 255, 255))
+#define green (al_map_rgb(0, 255, 0))
+#define orange (al_map_rgb(255, 165, 0))
+#define purple (al_map_rgb(128, 0, 128))
+#define red (al_map_rgb(255, 0, 0))
+#define white (al_map_rgb(255, 255, 255))
+#define yellow (al_map_rgb(255, 255, 0))
 
 const int FPS = 10;
 const int TILE_SIZE = 40;
 
 #define _XT(x) (x * TILE_SIZE)
 #define _0T 0
-#define _1T _XT(1)
-#define _2T _XT(2)
-#define _3T _XT(3)
-#define _4T _XT(4)
-#define _5T _XT(5)
+#define _1T (_XT(1))
+#define _2T (_XT(2))
+#define _3T (_XT(3))
+#define _4T (_XT(4))
+#define _5T (_XT(5))
 
 enum {
     PIECE_I,
