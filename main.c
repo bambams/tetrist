@@ -42,6 +42,7 @@ enum {
 
 typedef struct {
     int quit;
+    int status;
 
     ALLEGRO_DISPLAY * display;
     ALLEGRO_EVENT_QUEUE * events;
@@ -53,8 +54,8 @@ typedef struct {
     } sprites;
 } GAME_STATE;
 
-static void deinitialize(GAME_STATE *);
-static void initialize(GAME_STATE *);
+static int deinitialize(GAME_STATE *);
+static int initialize(GAME_STATE *);
 static int create_block(ALLEGRO_BITMAP **, ALLEGRO_COLOR);
 static int create_block_shaded(ALLEGRO_BITMAP **, ALLEGRO_COLOR,
                         ALLEGRO_COLOR, ALLEGRO_COLOR);
@@ -75,7 +76,11 @@ int main(int argc, char * argv[])
     int redraw = 0;
     GAME_STATE S;
 
-    initialize(&S);
+    S.status = initialize(&S);
+
+    if(S.status != 0) {
+        goto exit;
+    }
 
     al_start_timer(S.timer);
 
@@ -117,9 +122,10 @@ int main(int argc, char * argv[])
         }
     }
 
-    deinitialize(&S);
+exit:
+    S.status = deinitialize(&S);
 
-    return 0;
+    return S.status;
 }
 
 #define DEFX 40
@@ -154,24 +160,42 @@ static int get_y(int reset) {
     return y;
 }
 
-static void deinitialize(GAME_STATE * S)
+static int deinitialize(GAME_STATE * S)
 {
     int i, l;
     ALLEGRO_BITMAP ** sprite = NULL;
+    ALLEGRO_DISPLAY ** display = &S->display;
+    ALLEGRO_EVENT_QUEUE ** events = &S->events;
+    ALLEGRO_TIMER ** timer = &S->timer;
 
     sprite = S->sprites.pieces;
 
     for(i=0,l=6; i<l; i++) {
-        al_destroy_bitmap(*sprite);
-        *sprite++ = NULL;
+        if(*sprite) {
+            al_destroy_bitmap(*sprite);
+            *sprite++ = NULL;
+        }
     }
 
-    al_destroy_event_queue(S->events);
-    al_destroy_timer(S->timer);
-    al_destroy_display(S->display);
+    if(*events) {
+        al_destroy_event_queue(*events);
+        *events = NULL;
+    }
+
+    if(*timer) {
+        al_destroy_timer(*timer);
+        *timer = NULL;
+    }
+
+    if(*display) {
+        al_destroy_display(*display);
+        *display = NULL;
+    }
+
+    return S->status;
 }
 
-static void initialize(GAME_STATE * S)
+static int initialize(GAME_STATE * S)
 {
     memset(S, 0, sizeof(GAME_STATE));
 
@@ -183,17 +207,17 @@ static void initialize(GAME_STATE * S)
     ALLEGRO_TIMER ** timer = &S->timer;
 
     if(!al_init()) {
-        exit(1);
+        return 1;
     }
 
     if(!al_install_keyboard()) {
-        exit(2);
+        return 2;
     }
 
     *display = al_create_display(480, 640);
 
     if(*display == NULL) {
-        exit(3);
+        return 3;
     }
 
     *timer = al_create_timer(1.0/FPS);
@@ -201,7 +225,7 @@ static void initialize(GAME_STATE * S)
     *events = al_create_event_queue();
 
     if(*events == NULL) {
-        exit(4);
+        return 4;
     }
 
     al_register_event_source(*events, al_get_display_event_source(*display));
@@ -209,44 +233,46 @@ static void initialize(GAME_STATE * S)
     al_register_event_source(*events, al_get_timer_event_source(*timer));
 
     if(!al_init_primitives_addon()) {
-        exit(5);
+        return 5;
     }
 
     sprite = &S->sprites.block;
 
     if(!create_block(sprite, pink)) {
-        exit(6);
+        return 6;
     }
 
     sprite = S->sprites.pieces;
 
     if(!create_piece_i(sprite)) {
-        exit(7);
+        return 7;
     }
 
     if(!create_piece_j(++sprite)) {
-        exit(8);
+        return 8;
     }
 
     if(!create_piece_l(++sprite)) {
-        exit(9);
+        return 9;
     }
 
     if(!create_piece_o(++sprite)) {
-        exit(10);
+        return 10;
     }
 
     if(!create_piece_s(++sprite)) {
-        exit(11);
+        return 11;
     }
 
     if(!create_piece_t(++sprite)) {
-        exit(12);
+        return 12;
     }
 
     if(!create_piece_z(++sprite)) {
-        exit(13);
+        return 13;
     }
+
+    return 0;
 }
 
 static int create_sprite(ALLEGRO_BITMAP ** sprite, int w, int h)
