@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "list.h"
+
 #define black (al_map_rgb(0, 0, 0))
 #define blue (al_map_rgb(0, 0, 255))
 #define cyan (al_map_rgb(0, 255, 255))
@@ -58,6 +60,8 @@ typedef struct {
         ALLEGRO_BITMAP * block;
         ALLEGRO_BITMAP * pieces[7];
     } sprites;
+
+    LINKED_LIST * pieces;
 } GAME_STATE;
 
 static int create_block(ALLEGRO_BITMAP **, ALLEGRO_COLOR);
@@ -76,7 +80,9 @@ static void draw_block(ALLEGRO_BITMAP *, int, int);
 static int get_x(int reset);
 static int get_y(int reset);
 static int initialize(GAME_STATE *);
-static GAME_PIECE spawn_piece(GAME_STATE *, GAME_PIECE_TYPE);
+static int initialize_pieces(GAME_STATE *);
+static void piece_destroy(GAME_PIECE **);
+static GAME_PIECE * piece_spawn(GAME_STATE *, GAME_PIECE_TYPE);
 
 int main(int argc, char * argv[])
 {
@@ -84,6 +90,14 @@ int main(int argc, char * argv[])
     GAME_STATE S;
 
     S.status = initialize(&S);
+
+    if(S.status != 0) {
+        goto exit;
+    }
+
+    if(!initialize_pieces(&S)) {
+        S.status = 1;
+    }
 
     if(S.status != 0) {
         goto exit;
@@ -332,6 +346,9 @@ static int deinitialize(GAME_STATE * S)
     ALLEGRO_DISPLAY ** display = &S->display;
     ALLEGRO_EVENT_QUEUE ** events = &S->events;
     ALLEGRO_TIMER ** timer = &S->timer;
+    LINKED_LIST ** pieces = &S->pieces;
+
+    list_destroy(pieces, (void (*)(void **))piece_destroy);
 
     sprite = S->sprites.pieces;
 
@@ -475,16 +492,56 @@ static int initialize(GAME_STATE * S)
     return 0;
 }
 
-static GAME_PIECE spawn_piece(GAME_STATE * S, GAME_PIECE_TYPE type) {
-    assert(type > 0);
+static int initialize_pieces(GAME_STATE * S) {
+    LINKED_LIST ** pieces = &S->pieces;
+
+    for(GAME_PIECE_TYPE i=PIECE_I; i<NUM_PIECES; i++) {
+        GAME_PIECE * piece = piece_spawn(S, i);
+
+        int reset = i == PIECE_I ? 1 : 0;
+        piece->x = get_x(reset);
+        piece->y = get_y(reset);
+
+        if(piece == NULL || !list_add(pieces, piece)) {
+            goto error;
+        }
+    }
+
+    return 1;
+
+error:
+    list_destroy(pieces, (void (*)(void **))piece_destroy);
+    return 0;
+}
+
+static void piece_destroy(GAME_PIECE ** piece) {
+    if(*piece != NULL) {
+        free(*piece);
+        *piece = NULL;
+    }
+}
+
+static GAME_PIECE * piece_spawn(GAME_STATE * S, GAME_PIECE_TYPE type) {
+    assert(type >= 0);
     assert(type < NUM_PIECES);
 
-    GAME_PIECE piece;
+    GAME_PIECE * piece = malloc(sizeof(GAME_PIECE));
 
-    memset(&piece, 0, sizeof(GAME_PIECE));
+    if(piece == NULL) {
+        return NULL;
+    }
 
-    piece.sprite = S->sprites.pieces[type];
-    piece.type = type;
+    memset(piece, 0, sizeof(GAME_PIECE));
+
+    ALLEGRO_BITMAP * sprite = S->sprites.pieces[type];
+
+    int bx = al_get_bitmap_width(sprite);
+    int dx = al_get_display_width(S->display);
+    int x = dx / 2 - bx / 2;
+
+    piece->x = x;
+    piece->sprite = sprite;
+    piece->type = type;
 
     return piece;
 }
