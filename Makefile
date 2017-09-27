@@ -10,10 +10,13 @@ EXE = ./game
 LIBS = $$(pkg-config --libs $(ALLEGRO_LIBS))
 OBJECTS = $(shell find -name '*.c' | sed -e 's/\.c$$/.o/')
 
-all: $(EXE)
+all: clear $(EXE)
 
 clean:
 	rm -fR $(EXE) $(OBJECTS)
+
+clear:
+	if [ ! -z "$$MAKE_ALL_CLEAR" ]; then clear; fi;
 
 debug:
 	DEBUG=1 $(MAKE) clean all && gdb $(EXE)
