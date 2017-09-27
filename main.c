@@ -68,8 +68,11 @@ int main(int argc, char * argv[])
                 S.quit = 1;
                 break;
             case ALLEGRO_EVENT_KEY_DOWN:
-                if(ev.keyboard.keycode == ALLEGRO_KEY_Q) {
-                    S.quit = 1;
+                switch(ev.keyboard.keycode) {
+                    case ALLEGRO_KEY_ESCAPE:
+                    case ALLEGRO_KEY_Q:
+                        S.quit = 1;
+                        break;
                 }
                 break;
             case ALLEGRO_EVENT_TIMER:
