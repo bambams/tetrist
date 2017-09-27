@@ -4,6 +4,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define black al_map_rgb(0, 0, 0)
+#define cyan al_map_rgb(0, 255, 255)
+#define white al_map_rgb(255, 255, 255)
+
 const int FPS = 10;
 const int TILE_SIZE = 40;
 
@@ -72,7 +76,7 @@ int main(int argc, char * argv[])
 
         if(redraw) {
             al_set_target_bitmap(al_get_backbuffer(S.display));
-            al_clear_to_color(al_map_rgb(255, 255, 255));
+            al_clear_to_color(white);
             al_draw_bitmap(S.sprites.pieces[PIECE_I], 0, 0, 0);
             al_flip_display();
         }
@@ -189,7 +193,7 @@ int create_piece_i(ALLEGRO_BITMAP ** sprite) {
     al_set_target_bitmap(*sprite);
     al_draw_filled_rectangle(0, 0,
                              TILE_SIZE * 4, TILE_SIZE,
-                             al_map_rgb(0, 255, 255));
+                             cyan);
 
     return 1;
 }
