@@ -77,6 +77,7 @@ static int create_piece_z(ALLEGRO_BITMAP **);
 static int create_sprite(ALLEGRO_BITMAP **, int, int);
 static int deinitialize(GAME_STATE *);
 static void draw_block(ALLEGRO_BITMAP *, int, int);
+static void draw_pieces(LINKED_LIST **);
 static int get_x(int reset);
 static int get_y(int reset);
 static int initialize(GAME_STATE *);
@@ -132,13 +133,7 @@ int main(int argc, char * argv[])
             al_set_target_bitmap(al_get_backbuffer(S.display));
             al_clear_to_color(white);
             al_draw_bitmap(S.sprites.block, get_x(1), get_y(1), 0);
-            al_draw_bitmap(S.sprites.pieces[PIECE_I], get_x(0), get_y(0), 0);
-            al_draw_bitmap(S.sprites.pieces[PIECE_J], get_x(0), get_y(0), 0);
-            al_draw_bitmap(S.sprites.pieces[PIECE_L], get_x(0), get_y(0), 0);
-            al_draw_bitmap(S.sprites.pieces[PIECE_O], get_x(0), get_y(0), 0);
-            al_draw_bitmap(S.sprites.pieces[PIECE_S], get_x(0), get_y(0), 0);
-            al_draw_bitmap(S.sprites.pieces[PIECE_T], get_x(0), get_y(0), 0);
-            al_draw_bitmap(S.sprites.pieces[PIECE_Z], get_x(0), get_y(0), 0);
+            draw_pieces(&S.pieces);
             al_flip_display();
         }
     }
@@ -381,6 +376,18 @@ static void draw_block(ALLEGRO_BITMAP * block, int x, int y) {
     al_draw_bitmap(block, _XT(x), _XT(y), 0);
 }
 
+static void draw_pieces(LINKED_LIST ** pieces) {
+    LINKED_LIST * list = *pieces;
+
+    while(list != NULL) {
+        GAME_PIECE * piece = list->data;
+
+        al_draw_bitmap(piece->sprite, piece->x, piece->y, 0);
+
+        list = list->next;
+    }
+}
+
 static int get_x(int reset) {
     #define DEFX 40
     static int i = 0;
@@ -495,12 +502,14 @@ static int initialize(GAME_STATE * S)
 static int initialize_pieces(GAME_STATE * S) {
     LINKED_LIST ** pieces = &S->pieces;
 
+    get_x(1);
+    get_y(1);
+
     for(GAME_PIECE_TYPE i=PIECE_I; i<NUM_PIECES; i++) {
         GAME_PIECE * piece = piece_spawn(S, i);
 
-        int reset = i == PIECE_I ? 1 : 0;
-        piece->x = get_x(reset);
-        piece->y = get_y(reset);
+        piece->x = get_x(0);
+        piece->y = get_y(0);
 
         if(piece == NULL || !list_add(pieces, piece)) {
             goto error;
