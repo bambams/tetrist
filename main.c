@@ -14,6 +14,7 @@
 #define red (al_map_rgb(255, 0, 0))
 #define white (al_map_rgb(255, 255, 255))
 #define yellow (al_map_rgb(255, 255, 0))
+#define pink (al_map_rgb(254, 0, 254))
 
 const int FPS = 10;
 const int TILE_SIZE = 40;
@@ -45,13 +46,14 @@ typedef struct {
     ALLEGRO_TIMER * timer;
 
     struct {
+        ALLEGRO_BITMAP * block;
         ALLEGRO_BITMAP * pieces[7];
     } sprites;
 } GAME_STATE;
 
 void deinitialize(GAME_STATE *);
 void initialize(GAME_STATE *);
-int create_sprite(ALLEGRO_BITMAP **, int, int);
+int create_block(ALLEGRO_BITMAP **);
 int create_piece_i(ALLEGRO_BITMAP **);
 int create_piece_j(ALLEGRO_BITMAP **);
 int create_piece_l(ALLEGRO_BITMAP **);
@@ -59,6 +61,7 @@ int create_piece_o(ALLEGRO_BITMAP **);
 int create_piece_s(ALLEGRO_BITMAP **);
 int create_piece_t(ALLEGRO_BITMAP **);
 int create_piece_z(ALLEGRO_BITMAP **);
+int create_sprite(ALLEGRO_BITMAP **, int, int);
 
 static int get_x(int reset);
 static int get_y(int reset);
@@ -105,6 +108,7 @@ int main(int argc, char * argv[])
             al_draw_bitmap(S.sprites.pieces[PIECE_S], get_x(0), get_y(0), 0);
             al_draw_bitmap(S.sprites.pieces[PIECE_T], get_x(0), get_y(0), 0);
             al_draw_bitmap(S.sprites.pieces[PIECE_Z], get_x(0), get_y(0), 0);
+            al_draw_bitmap(S.sprites.block, _XT(10), _XT(10), 0);
             al_flip_display();
         }
     }
@@ -204,34 +208,40 @@ void initialize(GAME_STATE * S)
         exit(5);
     }
 
-    sprite = S->sprites.pieces;
+    sprite = &S->sprites.block;
 
-    if(!create_piece_i(sprite)) {
+    if(!create_block(sprite)) {
         exit(6);
     }
 
-    if(!create_piece_j(++sprite)) {
+    sprite = S->sprites.pieces;
+
+    if(!create_piece_i(sprite)) {
         exit(7);
     }
 
-    if(!create_piece_l(++sprite)) {
+    if(!create_piece_j(++sprite)) {
         exit(8);
     }
 
-    if(!create_piece_o(++sprite)) {
+    if(!create_piece_l(++sprite)) {
         exit(9);
     }
 
-    if(!create_piece_s(++sprite)) {
+    if(!create_piece_o(++sprite)) {
         exit(10);
     }
 
-    if(!create_piece_t(++sprite)) {
+    if(!create_piece_s(++sprite)) {
         exit(11);
     }
 
-    if(!create_piece_z(++sprite)) {
+    if(!create_piece_t(++sprite)) {
         exit(12);
+    }
+
+    if(!create_piece_z(++sprite)) {
+        exit(13);
     }
 }
 
@@ -248,6 +258,20 @@ int create_sprite(ALLEGRO_BITMAP ** sprite, int w, int h)
     }
 
     return *sprite != NULL;
+}
+
+int create_block(ALLEGRO_BITMAP ** sprite) {
+    if(!create_sprite(sprite, 1, 1)) {
+        return 0;
+    }
+
+    al_clear_to_color(pink);
+    al_draw_line(_0T, _0T + 4/2, _1T, _0T + 4/2, black, 4);
+    al_draw_line(_1T - 4/2, _0T, _1T - 4/2, _1T, black, 4);
+    al_draw_line(_1T, _1T - 4/2, _0T, _1T - 4/2, black, 4);
+    al_draw_line(_0T + 4/2, _1T, _0T + 4/2, _0T, black, 4);
+
+    return 1;
 }
 
 int create_piece_i(ALLEGRO_BITMAP ** sprite) {
