@@ -7,7 +7,9 @@
 #define black (al_map_rgb(0, 0, 0))
 #define blue (al_map_rgb(0, 0, 255))
 #define cyan (al_map_rgb(0, 255, 255))
+#define dgray (al_map_rgb(50, 50, 50))
 #define green (al_map_rgb(0, 255, 0))
+#define lgray (al_map_rgb(100, 100, 100))
 #define magicpink (al_map_rgb(255, 0, 255))
 #define orange (al_map_rgb(255, 165, 0))
 #define purple (al_map_rgb(128, 0, 128))
@@ -266,10 +268,10 @@ int create_block(ALLEGRO_BITMAP ** sprite) {
     }
 
     al_clear_to_color(pink);
-    al_draw_line(_0T, _0T + 4/2, _1T, _0T + 4/2, black, 4);
-    al_draw_line(_1T - 4/2, _0T, _1T - 4/2, _1T, black, 4);
-    al_draw_line(_1T, _1T - 4/2, _0T, _1T - 4/2, black, 4);
-    al_draw_line(_0T + 4/2, _1T, _0T + 4/2, _0T, black, 4);
+    al_draw_line(_0T, _0T + 4/2, _1T, _0T + 4/2, lgray, 4);
+    al_draw_line(_1T - 4/2, _0T, _1T - 4/2, _1T, dgray, 4);
+    al_draw_line(_1T, _1T - 4/2, _0T, _1T - 4/2, dgray, 4);
+    al_draw_line(_0T + 4/2, _1T, _0T + 4/2, _0T, lgray, 4);
 
     return 1;
 }
