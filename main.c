@@ -54,8 +54,6 @@ typedef struct {
     } sprites;
 } GAME_STATE;
 
-static int deinitialize(GAME_STATE *);
-static int initialize(GAME_STATE *);
 static int create_block(ALLEGRO_BITMAP **, ALLEGRO_COLOR);
 static int create_block_shaded(ALLEGRO_BITMAP **, ALLEGRO_COLOR,
                         ALLEGRO_COLOR, ALLEGRO_COLOR);
@@ -67,9 +65,11 @@ static int create_piece_s(ALLEGRO_BITMAP **);
 static int create_piece_t(ALLEGRO_BITMAP **);
 static int create_piece_z(ALLEGRO_BITMAP **);
 static int create_sprite(ALLEGRO_BITMAP **, int, int);
-
+static int deinitialize(GAME_STATE *);
+static void draw_block(ALLEGRO_BITMAP *, int, int);
 static int get_x(int reset);
 static int get_y(int reset);
+static int initialize(GAME_STATE *);
 
 int main(int argc, char * argv[])
 {
@@ -128,168 +128,6 @@ exit:
     return S.status;
 }
 
-#define DEFX 40
-#define DEFY 40
-
-static int get_x(int reset) {
-    static int i = 0;
-    static int x = DEFX;
-
-    if(reset) {
-        i = 0;
-        x = DEFX;
-    } else if(++i == 4) {
-        x += _5T;
-        i = 0;
-    }
-
-    return x;
-}
-
-static int get_y(int reset) {
-    static int i = 0;
-    static int y = DEFY;
-
-    if(reset || ++i == 4) {
-        i = 0;
-        y = DEFY;
-    } else {
-        y += _3T;
-    }
-
-    return y;
-}
-
-static int deinitialize(GAME_STATE * S)
-{
-    int i, l;
-    ALLEGRO_BITMAP ** sprite = NULL;
-    ALLEGRO_DISPLAY ** display = &S->display;
-    ALLEGRO_EVENT_QUEUE ** events = &S->events;
-    ALLEGRO_TIMER ** timer = &S->timer;
-
-    sprite = S->sprites.pieces;
-
-    for(i=0,l=6; i<l; i++) {
-        if(*sprite) {
-            al_destroy_bitmap(*sprite);
-            *sprite++ = NULL;
-        }
-    }
-
-    if(*events) {
-        al_destroy_event_queue(*events);
-        *events = NULL;
-    }
-
-    if(*timer) {
-        al_destroy_timer(*timer);
-        *timer = NULL;
-    }
-
-    if(*display) {
-        al_destroy_display(*display);
-        *display = NULL;
-    }
-
-    return S->status;
-}
-
-static int initialize(GAME_STATE * S)
-{
-    memset(S, 0, sizeof(GAME_STATE));
-
-    S->quit = 0;
-
-    ALLEGRO_BITMAP ** sprite = NULL;
-    ALLEGRO_DISPLAY ** display = &S->display;
-    ALLEGRO_EVENT_QUEUE ** events = &S->events;
-    ALLEGRO_TIMER ** timer = &S->timer;
-
-    if(!al_init()) {
-        return 1;
-    }
-
-    if(!al_install_keyboard()) {
-        return 2;
-    }
-
-    *display = al_create_display(480, 640);
-
-    if(*display == NULL) {
-        return 3;
-    }
-
-    *timer = al_create_timer(1.0/FPS);
-
-    *events = al_create_event_queue();
-
-    if(*events == NULL) {
-        return 4;
-    }
-
-    al_register_event_source(*events, al_get_display_event_source(*display));
-    al_register_event_source(*events, al_get_keyboard_event_source());
-    al_register_event_source(*events, al_get_timer_event_source(*timer));
-
-    if(!al_init_primitives_addon()) {
-        return 5;
-    }
-
-    sprite = &S->sprites.block;
-
-    if(!create_block(sprite, pink)) {
-        return 6;
-    }
-
-    sprite = S->sprites.pieces;
-
-    if(!create_piece_i(sprite)) {
-        return 7;
-    }
-
-    if(!create_piece_j(++sprite)) {
-        return 8;
-    }
-
-    if(!create_piece_l(++sprite)) {
-        return 9;
-    }
-
-    if(!create_piece_o(++sprite)) {
-        return 10;
-    }
-
-    if(!create_piece_s(++sprite)) {
-        return 11;
-    }
-
-    if(!create_piece_t(++sprite)) {
-        return 12;
-    }
-
-    if(!create_piece_z(++sprite)) {
-        return 13;
-    }
-
-    return 0;
-}
-
-static int create_sprite(ALLEGRO_BITMAP ** sprite, int w, int h)
-{
-    assert(sprite);
-
-    *sprite = al_create_bitmap(_XT(w), _XT(h));
-
-    if(*sprite) {
-        al_set_target_bitmap(*sprite);
-        al_clear_to_color(magicpink);
-        al_convert_mask_to_alpha(*sprite, magicpink);
-    }
-
-    return *sprite != NULL;
-}
-
 static int create_block(ALLEGRO_BITMAP ** sprite, ALLEGRO_COLOR fill) {
     return create_block_shaded(sprite, fill, lgray, dgray);
 }
@@ -309,10 +147,6 @@ static int create_block_shaded(ALLEGRO_BITMAP ** sprite,
     al_draw_line(_0T + 4/2, _1T, _0T + 4/2, _0T, topleft, 4);
 
     return 1;
-}
-
-static void draw_block(ALLEGRO_BITMAP * block, int x, int y) {
-    al_draw_bitmap(block, _XT(x), _XT(y), 0);
 }
 
 static int create_piece_i(ALLEGRO_BITMAP ** sprite) {
@@ -467,4 +301,169 @@ static int create_piece_z(ALLEGRO_BITMAP ** sprite) {
     draw_block(block, 2, 1);
 
     return 1;
+}
+
+static int create_sprite(ALLEGRO_BITMAP ** sprite, int w, int h)
+{
+    assert(sprite);
+
+    *sprite = al_create_bitmap(_XT(w), _XT(h));
+
+    if(*sprite) {
+        al_set_target_bitmap(*sprite);
+        al_clear_to_color(magicpink);
+        al_convert_mask_to_alpha(*sprite, magicpink);
+    }
+
+    return *sprite != NULL;
+}
+
+static int deinitialize(GAME_STATE * S)
+{
+    int i, l;
+    ALLEGRO_BITMAP ** sprite = NULL;
+    ALLEGRO_DISPLAY ** display = &S->display;
+    ALLEGRO_EVENT_QUEUE ** events = &S->events;
+    ALLEGRO_TIMER ** timer = &S->timer;
+
+    sprite = S->sprites.pieces;
+
+    for(i=0,l=6; i<l; i++) {
+        if(*sprite) {
+            al_destroy_bitmap(*sprite);
+            *sprite++ = NULL;
+        }
+    }
+
+    if(*events) {
+        al_destroy_event_queue(*events);
+        *events = NULL;
+    }
+
+    if(*timer) {
+        al_destroy_timer(*timer);
+        *timer = NULL;
+    }
+
+    if(*display) {
+        al_destroy_display(*display);
+        *display = NULL;
+    }
+
+    return S->status;
+}
+
+static void draw_block(ALLEGRO_BITMAP * block, int x, int y) {
+    al_draw_bitmap(block, _XT(x), _XT(y), 0);
+}
+
+static int get_x(int reset) {
+    #define DEFX 40
+    static int i = 0;
+    static int x = DEFX;
+
+    if(reset) {
+        i = 0;
+        x = DEFX;
+    } else if(++i == 4) {
+        x += _5T;
+        i = 0;
+    }
+
+    return x;
+}
+
+static int get_y(int reset) {
+    #define DEFY 40
+    static int i = 0;
+    static int y = DEFY;
+
+    if(reset || ++i == 4) {
+        i = 0;
+        y = DEFY;
+    } else {
+        y += _3T;
+    }
+
+    return y;
+}
+
+static int initialize(GAME_STATE * S)
+{
+    memset(S, 0, sizeof(GAME_STATE));
+
+    S->quit = 0;
+
+    ALLEGRO_BITMAP ** sprite = NULL;
+    ALLEGRO_DISPLAY ** display = &S->display;
+    ALLEGRO_EVENT_QUEUE ** events = &S->events;
+    ALLEGRO_TIMER ** timer = &S->timer;
+
+    if(!al_init()) {
+        return 1;
+    }
+
+    if(!al_install_keyboard()) {
+        return 2;
+    }
+
+    *display = al_create_display(480, 640);
+
+    if(*display == NULL) {
+        return 3;
+    }
+
+    *timer = al_create_timer(1.0/FPS);
+
+    *events = al_create_event_queue();
+
+    if(*events == NULL) {
+        return 4;
+    }
+
+    al_register_event_source(*events, al_get_display_event_source(*display));
+    al_register_event_source(*events, al_get_keyboard_event_source());
+    al_register_event_source(*events, al_get_timer_event_source(*timer));
+
+    if(!al_init_primitives_addon()) {
+        return 5;
+    }
+
+    sprite = &S->sprites.block;
+
+    if(!create_block(sprite, pink)) {
+        return 6;
+    }
+
+    sprite = S->sprites.pieces;
+
+    if(!create_piece_i(sprite)) {
+        return 7;
+    }
+
+    if(!create_piece_j(++sprite)) {
+        return 8;
+    }
+
+    if(!create_piece_l(++sprite)) {
+        return 9;
+    }
+
+    if(!create_piece_o(++sprite)) {
+        return 10;
+    }
+
+    if(!create_piece_s(++sprite)) {
+        return 11;
+    }
+
+    if(!create_piece_t(++sprite)) {
+        return 12;
+    }
+
+    if(!create_piece_z(++sprite)) {
+        return 13;
+    }
+
+    return 0;
 }
