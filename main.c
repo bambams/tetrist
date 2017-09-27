@@ -244,6 +244,7 @@ int create_sprite(ALLEGRO_BITMAP ** sprite, int w, int h)
     if(*sprite) {
         al_set_target_bitmap(*sprite);
         al_clear_to_color(magicpink);
+        al_convert_mask_to_alpha(*sprite, magicpink);
     }
 
     return *sprite != NULL;
