@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 #define black al_map_rgb(0, 0, 0)
+#define blue al_map_rgb(0, 0, 255)
 #define cyan al_map_rgb(0, 255, 255)
 #define white al_map_rgb(255, 255, 255)
 
@@ -250,6 +251,13 @@ int create_piece_j(ALLEGRO_BITMAP ** sprite) {
     if(!create_sprite(sprite, 3, 2)) {
         return 0;
     }
+
+    al_draw_filled_rectangle(0, 0,
+                             TILE_SIZE * 3, TILE_SIZE,
+                             blue);
+    al_draw_filled_rectangle(2 * TILE_SIZE, TILE_SIZE,
+                             2 * TILE_SIZE + TILE_SIZE, 2 * TILE_SIZE,
+                             blue);
 
     return 1;
 }
