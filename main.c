@@ -53,19 +53,19 @@ typedef struct {
     } sprites;
 } GAME_STATE;
 
-void deinitialize(GAME_STATE *);
-void initialize(GAME_STATE *);
-int create_block(ALLEGRO_BITMAP **, ALLEGRO_COLOR);
-int create_block_shaded(ALLEGRO_BITMAP **, ALLEGRO_COLOR,
+static void deinitialize(GAME_STATE *);
+static void initialize(GAME_STATE *);
+static int create_block(ALLEGRO_BITMAP **, ALLEGRO_COLOR);
+static int create_block_shaded(ALLEGRO_BITMAP **, ALLEGRO_COLOR,
                         ALLEGRO_COLOR, ALLEGRO_COLOR);
-int create_piece_i(ALLEGRO_BITMAP **);
-int create_piece_j(ALLEGRO_BITMAP **);
-int create_piece_l(ALLEGRO_BITMAP **);
-int create_piece_o(ALLEGRO_BITMAP **);
-int create_piece_s(ALLEGRO_BITMAP **);
-int create_piece_t(ALLEGRO_BITMAP **);
-int create_piece_z(ALLEGRO_BITMAP **);
-int create_sprite(ALLEGRO_BITMAP **, int, int);
+static int create_piece_i(ALLEGRO_BITMAP **);
+static int create_piece_j(ALLEGRO_BITMAP **);
+static int create_piece_l(ALLEGRO_BITMAP **);
+static int create_piece_o(ALLEGRO_BITMAP **);
+static int create_piece_s(ALLEGRO_BITMAP **);
+static int create_piece_t(ALLEGRO_BITMAP **);
+static int create_piece_z(ALLEGRO_BITMAP **);
+static int create_sprite(ALLEGRO_BITMAP **, int, int);
 
 static int get_x(int reset);
 static int get_y(int reset);
@@ -154,7 +154,7 @@ static int get_y(int reset) {
     return y;
 }
 
-void deinitialize(GAME_STATE * S)
+static void deinitialize(GAME_STATE * S)
 {
     int i, l;
     ALLEGRO_BITMAP ** sprite = NULL;
@@ -171,7 +171,7 @@ void deinitialize(GAME_STATE * S)
     al_destroy_display(S->display);
 }
 
-void initialize(GAME_STATE * S)
+static void initialize(GAME_STATE * S)
 {
     memset(S, 0, sizeof(GAME_STATE));
 
@@ -249,7 +249,7 @@ void initialize(GAME_STATE * S)
     }
 }
 
-int create_sprite(ALLEGRO_BITMAP ** sprite, int w, int h)
+static int create_sprite(ALLEGRO_BITMAP ** sprite, int w, int h)
 {
     assert(sprite);
 
@@ -264,11 +264,11 @@ int create_sprite(ALLEGRO_BITMAP ** sprite, int w, int h)
     return *sprite != NULL;
 }
 
-int create_block(ALLEGRO_BITMAP ** sprite, ALLEGRO_COLOR fill) {
+static int create_block(ALLEGRO_BITMAP ** sprite, ALLEGRO_COLOR fill) {
     return create_block_shaded(sprite, fill, lgray, dgray);
 }
 
-int create_block_shaded(ALLEGRO_BITMAP ** sprite, ALLEGRO_COLOR fill, ALLEGRO_COLOR topleft, ALLEGRO_COLOR bottomright) {
+static int create_block_shaded(ALLEGRO_BITMAP ** sprite, ALLEGRO_COLOR fill, ALLEGRO_COLOR topleft, ALLEGRO_COLOR bottomright) {
     if(!create_sprite(sprite, 1, 1)) {
         return 0;
     }
@@ -282,11 +282,11 @@ int create_block_shaded(ALLEGRO_BITMAP ** sprite, ALLEGRO_COLOR fill, ALLEGRO_CO
     return 1;
 }
 
-void draw_block(ALLEGRO_BITMAP * block, int x, int y) {
+static void draw_block(ALLEGRO_BITMAP * block, int x, int y) {
     al_draw_bitmap(block, _XT(x), _XT(y), 0);
 }
 
-int create_piece_i(ALLEGRO_BITMAP ** sprite) {
+static int create_piece_i(ALLEGRO_BITMAP ** sprite) {
     if(!create_sprite(sprite, 4, 1)) {
         return 0;
     }
@@ -308,7 +308,7 @@ int create_piece_i(ALLEGRO_BITMAP ** sprite) {
     return 1;
 }
 
-int create_piece_j(ALLEGRO_BITMAP ** sprite) {
+static int create_piece_j(ALLEGRO_BITMAP ** sprite) {
     if(!create_sprite(sprite, 3, 2)) {
         return 0;
     }
@@ -330,7 +330,7 @@ int create_piece_j(ALLEGRO_BITMAP ** sprite) {
     return 1;
 }
 
-int create_piece_l(ALLEGRO_BITMAP ** sprite) {
+static int create_piece_l(ALLEGRO_BITMAP ** sprite) {
     if(!create_sprite(sprite, 3, 2)) {
         return 0;
     }
@@ -352,7 +352,7 @@ int create_piece_l(ALLEGRO_BITMAP ** sprite) {
     return 1;
 }
 
-int create_piece_o(ALLEGRO_BITMAP ** sprite) {
+static int create_piece_o(ALLEGRO_BITMAP ** sprite) {
     if(!create_sprite(sprite, 2, 2)) {
         return 0;
     }
@@ -374,7 +374,7 @@ int create_piece_o(ALLEGRO_BITMAP ** sprite) {
     return 1;
 }
 
-int create_piece_s(ALLEGRO_BITMAP ** sprite) {
+static int create_piece_s(ALLEGRO_BITMAP ** sprite) {
     if(!create_sprite(sprite, 3, 2)) {
         return 0;
     }
@@ -396,7 +396,7 @@ int create_piece_s(ALLEGRO_BITMAP ** sprite) {
     return 1;
 }
 
-int create_piece_t(ALLEGRO_BITMAP ** sprite) {
+static int create_piece_t(ALLEGRO_BITMAP ** sprite) {
     if(!create_sprite(sprite, 3, 2)) {
         return 0;
     }
@@ -418,7 +418,7 @@ int create_piece_t(ALLEGRO_BITMAP ** sprite) {
     return 1;
 }
 
-int create_piece_z(ALLEGRO_BITMAP ** sprite) {
+static int create_piece_z(ALLEGRO_BITMAP ** sprite) {
     if(!create_sprite(sprite, 3, 2)) {
         return 0;
     }
