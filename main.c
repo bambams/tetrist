@@ -274,9 +274,9 @@ int create_block_shaded(ALLEGRO_BITMAP ** sprite, ALLEGRO_COLOR fill, ALLEGRO_CO
     }
 
     al_clear_to_color(fill);
-    al_draw_line(_0T, _0T + 4/2, _1T, _0T + 4/2, topleft, 4);
     al_draw_line(_1T - 4/2, _0T, _1T - 4/2, _1T, bottomright, 4);
     al_draw_line(_1T, _1T - 4/2, _0T, _1T - 4/2, bottomright, 4);
+    al_draw_line(_0T, _0T + 4/2, _1T, _0T + 4/2, topleft, 4);
     al_draw_line(_0T + 4/2, _1T, _0T + 4/2, _0T, topleft, 4);
 
     return 1;
