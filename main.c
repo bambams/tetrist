@@ -13,6 +13,14 @@
 const int FPS = 10;
 const int TILE_SIZE = 40;
 
+#define _XT(x) (x * TILE_SIZE)
+#define _0T 0
+#define _1T _XT(1)
+#define _2T _XT(2)
+#define _3T _XT(3)
+#define _4T _XT(4)
+#define _5T _XT(5)
+
 enum {
     PIECE_I,
     PIECE_J,
@@ -112,7 +120,7 @@ static int get_x(int reset) {
         i = 0;
         x = DEFX;
     } else if(++i == 4) {
-        x += TILE_SIZE * 5;
+        x += _5T;
         i = 0;
     }
 
@@ -127,7 +135,7 @@ static int get_y(int reset) {
         i = 0;
         y = DEFY;
     } else {
-        y += TILE_SIZE * 3;
+        y += _3T;
     }
 
     return y;
@@ -226,7 +234,7 @@ int create_sprite(ALLEGRO_BITMAP ** sprite, int w, int h)
 {
     assert(sprite);
 
-    *sprite = al_create_bitmap(TILE_SIZE * w, TILE_SIZE * h);
+    *sprite = al_create_bitmap(_XT(w), _XT(h));
 
     if(*sprite) {
         al_set_target_bitmap(*sprite);
@@ -241,8 +249,8 @@ int create_piece_i(ALLEGRO_BITMAP ** sprite) {
         return 0;
     }
 
-    al_draw_filled_rectangle(0, 0,
-                             TILE_SIZE * 4, TILE_SIZE,
+    al_draw_filled_rectangle(_0T, _0T,
+                             _4T, _1T,
                              cyan);
 
     return 1;
@@ -253,11 +261,11 @@ int create_piece_j(ALLEGRO_BITMAP ** sprite) {
         return 0;
     }
 
-    al_draw_filled_rectangle(0, 0,
-                             TILE_SIZE * 3, TILE_SIZE,
+    al_draw_filled_rectangle(_0T, _0T,
+                             _3T, _1T,
                              blue);
-    al_draw_filled_rectangle(2 * TILE_SIZE, TILE_SIZE,
-                             2 * TILE_SIZE + TILE_SIZE, 2 * TILE_SIZE,
+    al_draw_filled_rectangle(_2T, _1T,
+                             _2T + _1T, _1T + _1T,
                              blue);
 
     return 1;
@@ -268,11 +276,11 @@ int create_piece_l(ALLEGRO_BITMAP ** sprite) {
         return 0;
     }
 
-    al_draw_filled_rectangle(0, 0,
-                             TILE_SIZE * 3, TILE_SIZE,
+    al_draw_filled_rectangle(_0T, _0T,
+                             _3T, _1T,
                              orange);
-    al_draw_filled_rectangle(0, TILE_SIZE,
-                             TILE_SIZE, 2 * TILE_SIZE,
+    al_draw_filled_rectangle(_0T, _1T,
+                             _0T +_1T, _1T + _1T,
                              orange);
 
     return 1;
