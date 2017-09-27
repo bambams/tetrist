@@ -56,13 +56,13 @@ typedef struct {
 void deinitialize(GAME_STATE *);
 void initialize(GAME_STATE *);
 int create_block(ALLEGRO_BITMAP **);
-int create_piece_i(ALLEGRO_BITMAP **);
-int create_piece_j(ALLEGRO_BITMAP **);
-int create_piece_l(ALLEGRO_BITMAP **);
-int create_piece_o(ALLEGRO_BITMAP **);
-int create_piece_s(ALLEGRO_BITMAP **);
-int create_piece_t(ALLEGRO_BITMAP **);
-int create_piece_z(ALLEGRO_BITMAP **);
+int create_piece_i(ALLEGRO_BITMAP *, ALLEGRO_BITMAP **);
+int create_piece_j(ALLEGRO_BITMAP *, ALLEGRO_BITMAP **);
+int create_piece_l(ALLEGRO_BITMAP *, ALLEGRO_BITMAP **);
+int create_piece_o(ALLEGRO_BITMAP *, ALLEGRO_BITMAP **);
+int create_piece_s(ALLEGRO_BITMAP *, ALLEGRO_BITMAP **);
+int create_piece_t(ALLEGRO_BITMAP *, ALLEGRO_BITMAP **);
+int create_piece_z(ALLEGRO_BITMAP *, ALLEGRO_BITMAP **);
 int create_sprite(ALLEGRO_BITMAP **, int, int);
 
 static int get_x(int reset);
@@ -218,31 +218,31 @@ void initialize(GAME_STATE * S)
 
     sprite = S->sprites.pieces;
 
-    if(!create_piece_i(sprite)) {
+    if(!create_piece_i(S->sprites.block, sprite)) {
         exit(7);
     }
 
-    if(!create_piece_j(++sprite)) {
+    if(!create_piece_j(S->sprites.block, ++sprite)) {
         exit(8);
     }
 
-    if(!create_piece_l(++sprite)) {
+    if(!create_piece_l(S->sprites.block, ++sprite)) {
         exit(9);
     }
 
-    if(!create_piece_o(++sprite)) {
+    if(!create_piece_o(S->sprites.block, ++sprite)) {
         exit(10);
     }
 
-    if(!create_piece_s(++sprite)) {
+    if(!create_piece_s(S->sprites.block, ++sprite)) {
         exit(11);
     }
 
-    if(!create_piece_t(++sprite)) {
+    if(!create_piece_t(S->sprites.block, ++sprite)) {
         exit(12);
     }
 
-    if(!create_piece_z(++sprite)) {
+    if(!create_piece_z(S->sprites.block, ++sprite)) {
         exit(13);
     }
 }
@@ -276,7 +276,7 @@ int create_block(ALLEGRO_BITMAP ** sprite) {
     return 1;
 }
 
-int create_piece_i(ALLEGRO_BITMAP ** sprite) {
+int create_piece_i(ALLEGRO_BITMAP * block, ALLEGRO_BITMAP ** sprite) {
     if(!create_sprite(sprite, 4, 1)) {
         return 0;
     }
@@ -292,7 +292,7 @@ int create_piece_i(ALLEGRO_BITMAP ** sprite) {
     return 1;
 }
 
-int create_piece_j(ALLEGRO_BITMAP ** sprite) {
+int create_piece_j(ALLEGRO_BITMAP * block, ALLEGRO_BITMAP ** sprite) {
     if(!create_sprite(sprite, 3, 2)) {
         return 0;
     }
@@ -311,7 +311,7 @@ int create_piece_j(ALLEGRO_BITMAP ** sprite) {
     return 1;
 }
 
-int create_piece_l(ALLEGRO_BITMAP ** sprite) {
+int create_piece_l(ALLEGRO_BITMAP * block, ALLEGRO_BITMAP ** sprite) {
     if(!create_sprite(sprite, 3, 2)) {
         return 0;
     }
@@ -330,7 +330,7 @@ int create_piece_l(ALLEGRO_BITMAP ** sprite) {
     return 1;
 }
 
-int create_piece_o(ALLEGRO_BITMAP ** sprite) {
+int create_piece_o(ALLEGRO_BITMAP * block, ALLEGRO_BITMAP ** sprite) {
     if(!create_sprite(sprite, 2, 2)) {
         return 0;
     }
@@ -346,7 +346,7 @@ int create_piece_o(ALLEGRO_BITMAP ** sprite) {
     return 1;
 }
 
-int create_piece_s(ALLEGRO_BITMAP ** sprite) {
+int create_piece_s(ALLEGRO_BITMAP * block, ALLEGRO_BITMAP ** sprite) {
     if(!create_sprite(sprite, 3, 2)) {
         return 0;
     }
@@ -365,7 +365,7 @@ int create_piece_s(ALLEGRO_BITMAP ** sprite) {
     return 1;
 }
 
-int create_piece_t(ALLEGRO_BITMAP ** sprite) {
+int create_piece_t(ALLEGRO_BITMAP * block, ALLEGRO_BITMAP ** sprite) {
     if(!create_sprite(sprite, 3, 2)) {
         return 0;
     }
@@ -384,7 +384,7 @@ int create_piece_t(ALLEGRO_BITMAP ** sprite) {
     return 1;
 }
 
-int create_piece_z(ALLEGRO_BITMAP ** sprite) {
+int create_piece_z(ALLEGRO_BITMAP * block, ALLEGRO_BITMAP ** sprite) {
     if(!create_sprite(sprite, 3, 2)) {
         return 0;
     }
