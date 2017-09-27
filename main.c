@@ -276,6 +276,10 @@ int create_block(ALLEGRO_BITMAP ** sprite) {
     return 1;
 }
 
+void draw_block(ALLEGRO_BITMAP * block, int x, int y) {
+    al_draw_bitmap(block, _XT(x), _XT(y), 0);
+}
+
 int create_piece_i(ALLEGRO_BITMAP * block, ALLEGRO_BITMAP ** sprite) {
     if(!create_sprite(sprite, 4, 1)) {
         return 0;
