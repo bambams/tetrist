@@ -29,7 +29,7 @@ const int TILE_SIZE = 40;
 #define _4T (_XT(4))
 #define _5T (_XT(5))
 
-enum {
+typedef enum {
     PIECE_I,
     PIECE_J,
     PIECE_L,
@@ -38,7 +38,13 @@ enum {
     PIECE_T,
     PIECE_Z,
     NUM_PIECES
-};
+} GAME_PIECE_TYPE;
+
+typedef struct {
+    int x, y;
+    ALLEGRO_BITMAP * sprite;
+    GAME_PIECE_TYPE type;
+} GAME_PIECE;
 
 typedef struct {
     int quit;
@@ -70,6 +76,7 @@ static void draw_block(ALLEGRO_BITMAP *, int, int);
 static int get_x(int reset);
 static int get_y(int reset);
 static int initialize(GAME_STATE *);
+static GAME_PIECE spawn_piece(GAME_STATE *, GAME_PIECE_TYPE);
 
 int main(int argc, char * argv[])
 {
@@ -466,4 +473,18 @@ static int initialize(GAME_STATE * S)
     }
 
     return 0;
+}
+
+static GAME_PIECE spawn_piece(GAME_STATE * S, GAME_PIECE_TYPE type) {
+    assert(type > 0);
+    assert(type < NUM_PIECES);
+
+    GAME_PIECE piece;
+
+    memset(&piece, 0, sizeof(GAME_PIECE));
+
+    piece.sprite = S->sprites.pieces[type];
+    piece.type = type;
+
+    return piece;
 }
