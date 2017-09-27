@@ -8,6 +8,7 @@
 #define blue (al_map_rgb(0, 0, 255))
 #define cyan (al_map_rgb(0, 255, 255))
 #define green (al_map_rgb(0, 255, 0))
+#define magicpink (al_map_rgb(255, 0, 255))
 #define orange (al_map_rgb(255, 165, 0))
 #define purple (al_map_rgb(128, 0, 128))
 #define red (al_map_rgb(255, 0, 0))
@@ -242,7 +243,7 @@ int create_sprite(ALLEGRO_BITMAP ** sprite, int w, int h)
 
     if(*sprite) {
         al_set_target_bitmap(*sprite);
-        al_clear_to_color(black);;
+        al_clear_to_color(magicpink);
     }
 
     return *sprite != NULL;
