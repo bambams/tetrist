@@ -9,6 +9,7 @@
 #define cyan al_map_rgb(0, 255, 255)
 #define orange al_map_rgb(255, 165, 0)
 #define white al_map_rgb(255, 255, 255)
+#define yellow al_map_rgb(255, 255, 0)
 
 const int FPS = 10;
 const int TILE_SIZE = 40;
@@ -290,6 +291,10 @@ int create_piece_o(ALLEGRO_BITMAP ** sprite) {
     if(!create_sprite(sprite, 2, 2)) {
         return 0;
     }
+
+    al_draw_filled_rectangle(_0T, _0T,
+                             _2T, _2T,
+                             yellow);
 
     return 1;
 }
