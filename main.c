@@ -45,6 +45,9 @@ int create_piece_s(ALLEGRO_BITMAP **);
 int create_piece_t(ALLEGRO_BITMAP **);
 int create_piece_z(ALLEGRO_BITMAP **);
 
+static int get_x(int reset);
+static int get_y(int reset);
+
 int main(int argc, char * argv[])
 {
     int redraw = 0;
@@ -77,7 +80,13 @@ int main(int argc, char * argv[])
         if(redraw) {
             al_set_target_bitmap(al_get_backbuffer(S.display));
             al_clear_to_color(white);
-            al_draw_bitmap(S.sprites.pieces[PIECE_I], 0, 0, 0);
+            al_draw_bitmap(S.sprites.pieces[PIECE_I], get_x(1), get_y(1), 0);
+            al_draw_bitmap(S.sprites.pieces[PIECE_J], get_x(0), get_y(0), 0);
+            al_draw_bitmap(S.sprites.pieces[PIECE_L], get_x(0), get_y(0), 0);
+            al_draw_bitmap(S.sprites.pieces[PIECE_O], get_x(0), get_y(0), 0);
+            al_draw_bitmap(S.sprites.pieces[PIECE_S], get_x(0), get_y(0), 0);
+            al_draw_bitmap(S.sprites.pieces[PIECE_T], get_x(0), get_y(0), 0);
+            al_draw_bitmap(S.sprites.pieces[PIECE_Z], get_x(0), get_y(0), 0);
             al_flip_display();
         }
     }
@@ -85,6 +94,38 @@ int main(int argc, char * argv[])
     deinitialize(&S);
 
     return 0;
+}
+
+#define DEFX 40
+#define DEFY 40
+
+static int get_x(int reset) {
+    static int i = 0;
+    static int x = DEFX;
+
+    if(reset) {
+        i = 0;
+        x = DEFX;
+    } else if(++i == 4) {
+        x += TILE_SIZE * 5;
+        i = 0;
+    }
+
+    return x;
+}
+
+static int get_y(int reset) {
+    static int i = 0;
+    static int y = DEFY;
+
+    if(reset || ++i == 4) {
+        i = 0;
+        y = DEFY;
+    } else {
+        y += TILE_SIZE * 3;
+    }
+
+    return y;
 }
 
 void deinitialize(GAME_STATE * S)
