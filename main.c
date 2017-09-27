@@ -335,16 +335,19 @@ int create_piece_l(ALLEGRO_BITMAP ** sprite) {
         return 0;
     }
 
-    al_draw_filled_rectangle(_0T, _0T,
-                             _3T, _1T,
-                             orange);
-    al_draw_filled_rectangle(_0T, _1T,
-                             _0T +_1T, _1T + _1T,
-                             orange);
-    al_draw_rectangle(_0T + 4/2, _0T + 4/2, _1T - 4/2, _1T - 4/2, black, 4);
-    al_draw_rectangle(_1T + 4/2, _0T + 4/2, _1T + _1T - 4/2, _1T - 4/2, black, 4);
-    al_draw_rectangle(_2T + 4/2, _0T + 4/2, _2T + _1T - 4/2, _1T - 4/2, black, 4);
-    al_draw_rectangle(_0T + 4/2, _1T + 4/2, _1T - 4/2, _1T + _1T - 4/2, black, 4);
+    ALLEGRO_BITMAP * block = NULL;
+
+    if(!create_block(&block, orange)) {
+        al_destroy_bitmap(*sprite);
+        *sprite = NULL;
+        return 0;
+    }
+
+    al_set_target_bitmap(*sprite);
+    draw_block(block, 0, 0);
+    draw_block(block, 1, 0);
+    draw_block(block, 2, 0);
+    draw_block(block, 0, 1);
 
     return 1;
 }
