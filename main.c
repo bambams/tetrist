@@ -21,6 +21,7 @@
 #define pink (al_map_rgb(254, 0, 254))
 
 const int GFX_FPS = 10;
+const int GRAVITY = 1;
 const int LOGIC_FPS = 1;
 const int TILE_SIZE = 40;
 
@@ -66,6 +67,7 @@ typedef struct {
     LINKED_LIST * pieces;
 } GAME_STATE;
 
+static void apply_gravity(LINKED_LIST **);
 static int create_block(ALLEGRO_BITMAP **, ALLEGRO_COLOR);
 static int create_block_shaded(ALLEGRO_BITMAP **, ALLEGRO_COLOR,
                         ALLEGRO_COLOR, ALLEGRO_COLOR);
@@ -149,6 +151,18 @@ exit:
     S.status = deinitialize(&S);
 
     return S.status;
+}
+
+static void apply_gravity(LINKED_LIST ** pieces) {
+    LINKED_LIST * list = *pieces;
+
+    while(list != NULL) {
+        GAME_PIECE * piece = list->data;
+
+        piece->y += GRAVITY * TILE_SIZE;
+
+        list = list->next;
+    }
 }
 
 static int create_block(ALLEGRO_BITMAP ** sprite, ALLEGRO_COLOR fill) {
@@ -581,6 +595,7 @@ static GAME_PIECE * piece_spawn(GAME_STATE * S, GAME_PIECE_TYPE type) {
 }
 
 static void process_logic(GAME_STATE * S) {
+    apply_gravity(&S->pieces);
 }
 
 static void render_graphics(GAME_STATE * S) {
