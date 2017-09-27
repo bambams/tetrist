@@ -55,7 +55,6 @@ typedef struct {
 
 void deinitialize(GAME_STATE *);
 void initialize(GAME_STATE *);
-int create_block(ALLEGRO_BITMAP **);
 int create_piece_i(ALLEGRO_BITMAP *, ALLEGRO_BITMAP **);
 int create_piece_j(ALLEGRO_BITMAP *, ALLEGRO_BITMAP **);
 int create_piece_l(ALLEGRO_BITMAP *, ALLEGRO_BITMAP **);
@@ -63,6 +62,9 @@ int create_piece_o(ALLEGRO_BITMAP *, ALLEGRO_BITMAP **);
 int create_piece_s(ALLEGRO_BITMAP *, ALLEGRO_BITMAP **);
 int create_piece_t(ALLEGRO_BITMAP *, ALLEGRO_BITMAP **);
 int create_piece_z(ALLEGRO_BITMAP *, ALLEGRO_BITMAP **);
+int create_block(ALLEGRO_BITMAP **, ALLEGRO_COLOR);
+int create_block_shaded(ALLEGRO_BITMAP **, ALLEGRO_COLOR,
+                        ALLEGRO_COLOR, ALLEGRO_COLOR);
 int create_sprite(ALLEGRO_BITMAP **, int, int);
 
 static int get_x(int reset);
@@ -212,7 +214,7 @@ void initialize(GAME_STATE * S)
 
     sprite = &S->sprites.block;
 
-    if(!create_block(sprite)) {
+    if(!create_block(sprite, pink)) {
         exit(6);
     }
 
@@ -262,16 +264,20 @@ int create_sprite(ALLEGRO_BITMAP ** sprite, int w, int h)
     return *sprite != NULL;
 }
 
-int create_block(ALLEGRO_BITMAP ** sprite) {
+int create_block(ALLEGRO_BITMAP ** sprite, ALLEGRO_COLOR fill) {
+    return create_block_shaded(sprite, fill, lgray, dgray);
+}
+
+int create_block_shaded(ALLEGRO_BITMAP ** sprite, ALLEGRO_COLOR fill, ALLEGRO_COLOR topleft, ALLEGRO_COLOR bottomright) {
     if(!create_sprite(sprite, 1, 1)) {
         return 0;
     }
 
-    al_clear_to_color(pink);
-    al_draw_line(_0T, _0T + 4/2, _1T, _0T + 4/2, lgray, 4);
-    al_draw_line(_1T - 4/2, _0T, _1T - 4/2, _1T, dgray, 4);
-    al_draw_line(_1T, _1T - 4/2, _0T, _1T - 4/2, dgray, 4);
-    al_draw_line(_0T + 4/2, _1T, _0T + 4/2, _0T, lgray, 4);
+    al_clear_to_color(fill);
+    al_draw_line(_0T, _0T + 4/2, _1T, _0T + 4/2, topleft, 4);
+    al_draw_line(_1T - 4/2, _0T, _1T - 4/2, _1T, bottomright, 4);
+    al_draw_line(_1T, _1T - 4/2, _0T, _1T - 4/2, bottomright, 4);
+    al_draw_line(_0T + 4/2, _1T, _0T + 4/2, _0T, topleft, 4);
 
     return 1;
 }
