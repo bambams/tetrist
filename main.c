@@ -268,7 +268,10 @@ static int create_block(ALLEGRO_BITMAP ** sprite, ALLEGRO_COLOR fill) {
     return create_block_shaded(sprite, fill, lgray, dgray);
 }
 
-static int create_block_shaded(ALLEGRO_BITMAP ** sprite, ALLEGRO_COLOR fill, ALLEGRO_COLOR topleft, ALLEGRO_COLOR bottomright) {
+static int create_block_shaded(ALLEGRO_BITMAP ** sprite,
+                               ALLEGRO_COLOR fill,
+                               ALLEGRO_COLOR topleft,
+                               ALLEGRO_COLOR bottomright) {
     if(!create_sprite(sprite, 1, 1)) {
         return 0;
     }
