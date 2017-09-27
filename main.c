@@ -7,6 +7,7 @@
 #define black al_map_rgb(0, 0, 0)
 #define blue al_map_rgb(0, 0, 255)
 #define cyan al_map_rgb(0, 255, 255)
+#define green al_map_rgb(0, 255, 0)
 #define orange al_map_rgb(255, 165, 0)
 #define white al_map_rgb(255, 255, 255)
 #define yellow al_map_rgb(255, 255, 0)
@@ -303,6 +304,13 @@ int create_piece_s(ALLEGRO_BITMAP ** sprite) {
     if(!create_sprite(sprite, 3, 2)) {
         return 0;
     }
+
+    al_draw_filled_rectangle(_1T, _0T,
+                             _1T + _2T, _1T,
+                             green);
+    al_draw_filled_rectangle(_0T, _1T,
+                             _0T + _2T, _1T + _1T,
+                             green);
 
     return 1;
 }
