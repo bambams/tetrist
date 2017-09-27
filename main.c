@@ -20,7 +20,8 @@
 #define yellow (al_map_rgb(255, 255, 0))
 #define pink (al_map_rgb(254, 0, 254))
 
-const int FPS = 10;
+const int GFX_FPS = 10;
+const int LOGIC_FPS = 1;
 const int TILE_SIZE = 40;
 
 #define _XT(x) (x * TILE_SIZE)
@@ -54,7 +55,8 @@ typedef struct {
 
     ALLEGRO_DISPLAY * display;
     ALLEGRO_EVENT_QUEUE * events;
-    ALLEGRO_TIMER * timer;
+    ALLEGRO_TIMER * gfx_timer;
+    ALLEGRO_TIMER * logic_timer;
 
     struct {
         ALLEGRO_BITMAP * block;
@@ -84,10 +86,12 @@ static int initialize(GAME_STATE *);
 static int initialize_pieces(GAME_STATE *);
 static void piece_destroy(GAME_PIECE **);
 static GAME_PIECE * piece_spawn(GAME_STATE *, GAME_PIECE_TYPE);
+static void process_logic(GAME_STATE *);
+static void render_graphics(GAME_STATE *);
 
 int main(int argc, char * argv[])
 {
-    int redraw = 0;
+    int redraw = 1;
     GAME_STATE S;
 
     S.status = initialize(&S);
@@ -104,12 +108,15 @@ int main(int argc, char * argv[])
         goto exit;
     }
 
-    al_start_timer(S.timer);
+    al_start_timer(S.gfx_timer);
+    al_start_timer(S.logic_timer);
 
     while(!S.quit) {
         ALLEGRO_EVENT ev;
 
         al_wait_for_event(S.events, &ev);
+
+        ALLEGRO_TIMER * source = NULL;
 
         switch(ev.type)
         {
@@ -125,16 +132,16 @@ int main(int argc, char * argv[])
                 }
                 break;
             case ALLEGRO_EVENT_TIMER:
-                redraw = 1;
-                break;
-        }
+                source = ev.timer.source;
 
-        if(redraw) {
-            al_set_target_bitmap(al_get_backbuffer(S.display));
-            al_clear_to_color(white);
-            al_draw_bitmap(S.sprites.block, get_x(1), get_y(1), 0);
-            draw_pieces(&S.pieces);
-            al_flip_display();
+                if(source == S.gfx_timer && redraw) {
+                    redraw = 0;
+                    render_graphics(&S);
+                } else if(source == S.logic_timer) {
+                    process_logic(&S);
+                    redraw = 1;
+                }
+                break;
         }
     }
 
@@ -340,7 +347,8 @@ static int deinitialize(GAME_STATE * S)
     ALLEGRO_BITMAP ** sprite = NULL;
     ALLEGRO_DISPLAY ** display = &S->display;
     ALLEGRO_EVENT_QUEUE ** events = &S->events;
-    ALLEGRO_TIMER ** timer = &S->timer;
+    ALLEGRO_TIMER ** gfx_timer = &S->gfx_timer;
+    ALLEGRO_TIMER ** logic_timer = &S->logic_timer;
     LINKED_LIST ** pieces = &S->pieces;
 
     list_destroy(pieces, (void (*)(void **))piece_destroy);
@@ -359,9 +367,14 @@ static int deinitialize(GAME_STATE * S)
         *events = NULL;
     }
 
-    if(*timer) {
-        al_destroy_timer(*timer);
-        *timer = NULL;
+    if(*gfx_timer) {
+        al_destroy_timer(*gfx_timer);
+        *gfx_timer = NULL;
+    }
+
+    if(*logic_timer) {
+        al_destroy_timer(*logic_timer);
+        *logic_timer = NULL;
     }
 
     if(*display) {
@@ -428,7 +441,8 @@ static int initialize(GAME_STATE * S)
     ALLEGRO_BITMAP ** sprite = NULL;
     ALLEGRO_DISPLAY ** display = &S->display;
     ALLEGRO_EVENT_QUEUE ** events = &S->events;
-    ALLEGRO_TIMER ** timer = &S->timer;
+    ALLEGRO_TIMER ** gfx_timer = &S->gfx_timer;
+    ALLEGRO_TIMER ** logic_timer = &S->logic_timer;
 
     if(!al_init()) {
         return 1;
@@ -444,56 +458,67 @@ static int initialize(GAME_STATE * S)
         return 3;
     }
 
-    *timer = al_create_timer(1.0/FPS);
+    *gfx_timer = al_create_timer(1.0/GFX_FPS);
+
+    if(*gfx_timer == NULL) {
+        return 4;
+    }
+
+    *logic_timer = al_create_timer(1.0/LOGIC_FPS);
+
+    if(*logic_timer == NULL) {
+        return 5;
+    }
 
     *events = al_create_event_queue();
 
     if(*events == NULL) {
-        return 4;
+        return 6;
     }
 
     al_register_event_source(*events, al_get_display_event_source(*display));
     al_register_event_source(*events, al_get_keyboard_event_source());
-    al_register_event_source(*events, al_get_timer_event_source(*timer));
+    al_register_event_source(*events, al_get_timer_event_source(*gfx_timer));
+    al_register_event_source(*events, al_get_timer_event_source(*logic_timer));
 
     if(!al_init_primitives_addon()) {
-        return 5;
+        return 7;
     }
 
     sprite = &S->sprites.block;
 
     if(!create_block(sprite, pink)) {
-        return 6;
+        return 8;
     }
 
     sprite = S->sprites.pieces;
 
     if(!create_piece_i(sprite)) {
-        return 7;
-    }
-
-    if(!create_piece_j(++sprite)) {
-        return 8;
-    }
-
-    if(!create_piece_l(++sprite)) {
         return 9;
     }
 
-    if(!create_piece_o(++sprite)) {
+    if(!create_piece_j(++sprite)) {
         return 10;
     }
 
-    if(!create_piece_s(++sprite)) {
+    if(!create_piece_l(++sprite)) {
         return 11;
     }
 
-    if(!create_piece_t(++sprite)) {
+    if(!create_piece_o(++sprite)) {
         return 12;
     }
 
-    if(!create_piece_z(++sprite)) {
+    if(!create_piece_s(++sprite)) {
         return 13;
+    }
+
+    if(!create_piece_t(++sprite)) {
+        return 14;
+    }
+
+    if(!create_piece_z(++sprite)) {
+        return 15;
     }
 
     return 0;
@@ -553,4 +578,15 @@ static GAME_PIECE * piece_spawn(GAME_STATE * S, GAME_PIECE_TYPE type) {
     piece->type = type;
 
     return piece;
+}
+
+static void process_logic(GAME_STATE * S) {
+}
+
+static void render_graphics(GAME_STATE * S) {
+    al_set_target_bitmap(al_get_backbuffer(S->display));
+    al_clear_to_color(white);
+    al_draw_bitmap(S->sprites.block, get_x(1), get_y(1), 0);
+    draw_pieces(&S->pieces);
+    al_flip_display();
 }
