@@ -112,7 +112,7 @@ int main(int argc, char * argv[])
             al_draw_bitmap(S.sprites.pieces[PIECE_S], get_x(0), get_y(0), 0);
             al_draw_bitmap(S.sprites.pieces[PIECE_T], get_x(0), get_y(0), 0);
             al_draw_bitmap(S.sprites.pieces[PIECE_Z], get_x(0), get_y(0), 0);
-            al_draw_bitmap(S.sprites.block, _XT(10), _XT(10), 0);
+            al_draw_bitmap(S.sprites.block, get_x(0), get_y(0), 0);
             al_flip_display();
         }
     }
