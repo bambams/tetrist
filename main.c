@@ -105,14 +105,14 @@ int main(int argc, char * argv[])
         if(redraw) {
             al_set_target_bitmap(al_get_backbuffer(S.display));
             al_clear_to_color(white);
-            al_draw_bitmap(S.sprites.pieces[PIECE_I], get_x(1), get_y(1), 0);
+            al_draw_bitmap(S.sprites.block, get_x(1), get_y(1), 0);
+            al_draw_bitmap(S.sprites.pieces[PIECE_I], get_x(0), get_y(0), 0);
             al_draw_bitmap(S.sprites.pieces[PIECE_J], get_x(0), get_y(0), 0);
             al_draw_bitmap(S.sprites.pieces[PIECE_L], get_x(0), get_y(0), 0);
             al_draw_bitmap(S.sprites.pieces[PIECE_O], get_x(0), get_y(0), 0);
             al_draw_bitmap(S.sprites.pieces[PIECE_S], get_x(0), get_y(0), 0);
             al_draw_bitmap(S.sprites.pieces[PIECE_T], get_x(0), get_y(0), 0);
             al_draw_bitmap(S.sprites.pieces[PIECE_Z], get_x(0), get_y(0), 0);
-            al_draw_bitmap(S.sprites.block, get_x(0), get_y(0), 0);
             al_flip_display();
         }
     }
