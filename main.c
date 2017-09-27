@@ -182,6 +182,11 @@ int create_sprite(ALLEGRO_BITMAP ** sprite, int w, int h)
 
     *sprite = al_create_bitmap(TILE_SIZE * w, TILE_SIZE * h);
 
+    if(*sprite) {
+        al_set_target_bitmap(*sprite);
+        al_clear_to_color(black);;
+    }
+
     return *sprite != NULL;
 }
 
@@ -190,7 +195,6 @@ int create_piece_i(ALLEGRO_BITMAP ** sprite) {
         return 0;
     }
 
-    al_set_target_bitmap(*sprite);
     al_draw_filled_rectangle(0, 0,
                              TILE_SIZE * 4, TILE_SIZE,
                              cyan);
