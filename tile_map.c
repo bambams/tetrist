@@ -43,7 +43,10 @@ int tile_map_create(TILE_MAP ** tiles, int w, int h,
 
 void tile_map_destroy(TILE_MAP ** tiles) {
     assert(tiles);
-    assert(*tiles);
+
+    if(!*tiles) {
+        return;
+    }
 
     char ** map = &(*tiles)->map;
 

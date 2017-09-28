@@ -420,7 +420,10 @@ static void draw_pieces(LINKED_LIST ** pieces) {
 
 static void game_board_destroy(GAME_BOARD ** game_board) {
     assert(game_board);
-    assert(*game_board);
+
+    if(!*game_board) {
+        return;
+    }
 
     free(*game_board);
     *game_board = NULL;
@@ -626,10 +629,14 @@ static GAME_PIECE_TYPE next_piece_type(GAME_STATE * S) {
 }
 
 static void piece_destroy(GAME_PIECE ** piece) {
-    if(*piece != NULL) {
-        free(*piece);
-        *piece = NULL;
+    assert(piece);
+
+    if(!*piece) {
+        return;
     }
+
+    free(*piece);
+    *piece = NULL;
 }
 
 static GAME_PIECE * piece_spawn(GAME_STATE * S, GAME_PIECE_TYPE type) {
