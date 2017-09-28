@@ -336,6 +336,9 @@ static int create_piece_sprite(ALLEGRO_BITMAP ** sprite,
         }
     }
 
+    al_destroy_bitmap(block);
+    block = NULL;
+
     return 1;
 }
 
@@ -425,6 +428,10 @@ static void game_board_destroy(GAME_BOARD ** game_board) {
         return;
     }
 
+    TILE_MAP ** tiles = &(*game_board)->tiles;
+
+    tile_map_destroy(tiles);
+
     free(*game_board);
     *game_board = NULL;
 }
@@ -494,8 +501,8 @@ static int handle_landing(GAME_STATE * S,
             char * map1 = "<error>";
             char * map2 = "<error>";
 
-            map_to_string(t1->map, &map1, len1);
-            map_to_string(t2->map, &map2, len2);
+            int map1b = map_to_string(t1->map, &map1, len1);
+            int map2b = map_to_string(t2->map, &map2, len2);
 
             fprintf(stderr,
                     "Current piece (0x%p) is colliding at (%d,%d). "
@@ -508,6 +515,9 @@ static int handle_landing(GAME_STATE * S,
                     map1,
                     p2->x, p2->y,
                     map2);
+
+            if(map1b) free(map1);
+            if(map2b) free(map2);
 
             if(!*noclip) {
                 S->respawn = 1;
@@ -634,6 +644,10 @@ static void piece_destroy(GAME_PIECE ** piece) {
     if(!*piece) {
         return;
     }
+
+    TILE_MAP ** tiles = &(*piece)->tiles;
+
+    tile_map_destroy(tiles);
 
     free(*piece);
     *piece = NULL;
