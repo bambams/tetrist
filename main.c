@@ -13,7 +13,6 @@
 #define lgray (al_map_rgb(100, 100, 100))
 #define magicpink (al_map_rgb(255, 0, 255))
 #define white (al_map_rgb(255, 255, 255))
-#define pink (al_map_rgb(254, 0, 254))
 
 const int GFX_FPS = 10;
 const int GRAVITY = 1;
@@ -135,7 +134,6 @@ typedef struct {
     LINKED_LIST * pieces;
 
     struct {
-        ALLEGRO_BITMAP * block;
         ALLEGRO_BITMAP * game_board;
         ALLEGRO_BITMAP * pieces[7];
     } sprites;
@@ -153,16 +151,15 @@ static void draw_block(ALLEGRO_BITMAP *, int, int);
 static void draw_pieces(LINKED_LIST **);
 static void game_board_destroy(GAME_BOARD **);
 static GAME_BOARD * game_board_spawn(GAME_STATE *);
-static int get_x(int reset);
-static int get_y(int reset);
 static int initialize(GAME_STATE *);
 static int initialize_game_board(GAME_STATE *);
-static int initialize_pieces(GAME_STATE *);
+static GAME_PIECE_TYPE next_piece_type(GAME_STATE *);
 static void piece_destroy(GAME_PIECE **);
 static GAME_PIECE * piece_spawn(GAME_STATE *, GAME_PIECE_TYPE);
 static void process_logic(GAME_STATE *);
 static void render_graphics(GAME_STATE *);
 static ALLEGRO_COLOR rgb_to_color(RGB);
+static int spawn_next_piece(GAME_STATE *);
 
 int main(int argc, char * argv[])
 {
@@ -180,7 +177,7 @@ int main(int argc, char * argv[])
         goto exit;
     }
 
-    if(!initialize_pieces(&S)) {
+    if(!spawn_next_piece(&S)) {
         S.status = 1;
         goto exit;
     }
@@ -462,37 +459,6 @@ static GAME_BOARD * game_board_spawn(GAME_STATE * S) {
     return game_board;
 }
 
-static int get_x(int reset) {
-    #define DEFX 40
-    static int i = 0;
-    static int x = DEFX;
-
-    if(reset) {
-        i = 0;
-        x = DEFX;
-    } else if(++i == 4) {
-        x += _5T;
-        i = 0;
-    }
-
-    return x;
-}
-
-static int get_y(int reset) {
-    #define DEFY 40
-    static int i = 0;
-    static int y = DEFY;
-
-    if(reset || ++i == 4) {
-        i = 0;
-        y = DEFY;
-    } else {
-        y += _3T;
-    }
-
-    return y;
-}
-
 static int initialize(GAME_STATE * S)
 {
     memset(S, 0, sizeof(GAME_STATE));
@@ -546,12 +512,6 @@ static int initialize(GAME_STATE * S)
         return 7;
     }
 
-    sprite = &S->sprites.block;
-
-    if(!create_block(sprite, pink)) {
-        return 8;
-    }
-
     sprite = &S->sprites.game_board;
 
     if(!create_game_board(S)) {
@@ -581,28 +541,12 @@ static int initialize_game_board(GAME_STATE * S) {
     return 1;
 }
 
-static int initialize_pieces(GAME_STATE * S) {
-    LINKED_LIST ** pieces = &S->pieces;
+static GAME_PIECE_TYPE next_piece_type(GAME_STATE * S) {
+    static GAME_PIECE_TYPE type = PIECE_Z;
 
-    get_x(1);
-    get_y(1);
+    type = (type + 1) % NUM_PIECES;
 
-    for(GAME_PIECE_TYPE i=PIECE_I; i<NUM_PIECES; i++) {
-        GAME_PIECE * piece = piece_spawn(S, i);
-
-        piece->position.x = get_x(0);
-        piece->position.y = get_y(0);
-
-        if(piece == NULL || !list_add(pieces, piece)) {
-            goto error;
-        }
-    }
-
-    return 1;
-
-error:
-    list_destroy(pieces, (void (*)(void **))piece_destroy);
-    return 0;
+    return type;
 }
 
 static void piece_destroy(GAME_PIECE ** piece) {
@@ -616,7 +560,10 @@ static GAME_PIECE * piece_spawn(GAME_STATE * S, GAME_PIECE_TYPE type) {
     assert(type >= 0);
     assert(type < NUM_PIECES);
 
+    GAME_BOARD * game_board = S->game_board;
+    POINT * spawn = &game_board->spawn;
     GAME_PIECE * piece = malloc(sizeof(GAME_PIECE));
+    LINKED_LIST ** pieces = &S->pieces;
 
     if(piece == NULL) {
         return NULL;
@@ -635,14 +582,19 @@ static GAME_PIECE * piece_spawn(GAME_STATE * S, GAME_PIECE_TYPE type) {
     }
 
     ALLEGRO_BITMAP * sprite = S->sprites.pieces[type];
+    int w = al_get_bitmap_width(sprite);
 
-    int bx = al_get_bitmap_width(sprite);
-    int dx = al_get_display_width(S->display);
-    int x = dx / 2 - bx / 2;
-
-    piece->position.x = x;
+    piece->position.x = spawn->x - w / 2;
+    piece->position.y = spawn->y;
     piece->sprite = sprite;
     piece->type = type;
+
+    if(!list_add(pieces, piece)) {
+        tile_map_destroy(tiles);
+        free(piece);
+        piece = NULL;
+        return NULL;
+    }
 
     return piece;
 }
@@ -655,11 +607,17 @@ static void render_graphics(GAME_STATE * S) {
     al_set_target_bitmap(al_get_backbuffer(S->display));
     al_clear_to_color(white);
     al_draw_bitmap(S->game_board->sprite, 0, 0, 0);
-    al_draw_bitmap(S->sprites.block, get_x(1), get_y(1), 0);
     draw_pieces(&S->pieces);
     al_flip_display();
 }
 
 static ALLEGRO_COLOR rgb_to_color(RGB rgb) {
     return al_map_rgb(rgb.r, rgb.g, rgb.b);
+}
+
+static int spawn_next_piece(GAME_STATE * S) {
+    GAME_PIECE_TYPE type = next_piece_type(S);
+    GAME_PIECE * piece = piece_spawn(S, type);
+
+    return piece != NULL;
 }
