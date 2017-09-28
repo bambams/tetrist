@@ -505,8 +505,8 @@ static int handle_landing(GAME_STATE * S,
             int map2b = map_to_string(t2->map, &map2, len2);
 
             fprintf(stderr,
-                    "Current piece (0x%p) is colliding at (%d,%d). "
-                    "Current piece is at (%d,%d) with tile map \"%s\" "
+                    "Piece (0x%p) is colliding at (%d,%d). "
+                    "Piece is at (%d,%d) with tile map \"%s\" "
                     "and colliding piece is at (%d,%d) with tile map "
                     "\"%s\". Respawning a new piece.\n",
                     piece,
@@ -524,7 +524,7 @@ static int handle_landing(GAME_STATE * S,
             }
         } else if(*noclip) {
             fprintf(stderr,
-                    "Current piece (0x%p) is no longer colliding. "
+                    "Piece (0x%p) is no longer colliding. "
                     "No clipping is now off.\n",
                     piece);
             *noclip = 0;
@@ -710,6 +710,28 @@ static int process_logic(GAME_STATE * S) {
         }
     }
 
+    /******** HACKS: Remove me.*/
+    LINKED_LIST * list = S->pieces;
+
+    while(list != NULL) {
+        GAME_PIECE * piece = list->data;
+
+        char type_names[] = {
+            'I','J','L','O', 'S','T','Z'
+        };
+
+        char * map = "<error>";
+        int mapb = map_to_string(piece->tiles->map, &map, piece->tiles->size.w * piece->tiles->size.h);
+
+        fprintf(stderr, "#'<piece#%p>(:moving %d :noclip %d :sprite %p :type %c :next_position (:x %d :y %d) :position (:x %d :y %d) :tiles #'<tile_map#%p>(:size (:w %d :h %d) :map \"%s\"))\n",
+                         piece,piece->moving,piece->noclip,piece->sprite,type_names[piece->type],piece->next_position.x,piece->next_position.y,piece->position.x,piece->position.y,piece->tiles,piece->tiles->size.w,piece->tiles->size.h,map);
+
+        if(mapb) free(map);
+
+        list = list->next;
+    }
+    /**************************/
+
     return 1;
 }
 
@@ -755,6 +777,9 @@ static void resolve_movement(GAME_STATE * S, GAME_PIECE * piece,
     }
 
     if(!collision) {
+        fprintf(stderr, "Piece %p is not colliding. Previous position was (%d,%d) and new position is (%d,%d)\n",
+                         piece, piece->position.x, piece->position.y, piece->next_position.x, piece->next_position.y);
+
         piece->position = piece->next_position;
     }
 
