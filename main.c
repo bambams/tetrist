@@ -97,6 +97,7 @@ static int map_to_string(char *, char **, int);
 static GAME_PIECE_TYPE next_piece_type(GAME_STATE *);
 static void piece_destroy(GAME_PIECE **);
 static GAME_PIECE * piece_spawn(GAME_STATE *, GAME_PIECE_TYPE);
+void print_collision(GAME_PIECE *, POINT *, TILE_MAP *, POINT *, int);
 static int process_logic(GAME_STATE *);
 static void render_graphics(GAME_STATE *);
 static void resolve_movement(GAME_STATE *, GAME_PIECE *,
@@ -495,38 +496,10 @@ static int handle_landing(GAME_STATE * S,
     int * noclip = &piece->noclip;
 
     if(collision) {
-        POINT * p1 = &piece->next_position;
-        TILE_MAP * t1 = piece->tiles;
-        SIZE s1 = t1->size;
-        SIZE s2 = t2->size;
-        int len1 = sizeof(char) * s1.w * s1.h;
-        int len2 = sizeof(char) * s2.w * s2.h;
-        char * map1 = "<error>";
-        char * map2 = "<error>";
-        int player_fail = piece == current_piece && !*noclip;
-
-        int map1b = map_to_string(t1->map, &map1, len1);
-        int map2b = map_to_string(t2->map, &map2, len2);
         int player_fail = piece == current_piece &&
                 !(game_board_collision && *noclip);
 
-        fprintf(stderr,
-                "Piece (0x%p) is colliding at (%d,%d). "
-                "Piece is at (%d,%d) with tile map \"%s\" "
-                "and colliding piece is at (%d,%d) with tile map "
-                "\"%s\". %s\n",
-                piece,
-                spot->x, spot->y,
-                p1->x, p1->y,
-                map1,
-                p2->x, p2->y,
-                map2,
-                player_fail ?
-                "Respawning a new piece." :
-                "Piece stopped.");
-
-        if(map1b) free(map1);
-        if(map2b) free(map2);
+        print_collision(piece, p2, t2, spot, player_fail);
 
         if(player_fail) {
             S->respawn = 1;
@@ -709,6 +682,40 @@ static GAME_PIECE * piece_spawn(GAME_STATE * S, GAME_PIECE_TYPE type) {
     S->current_piece = piece;
 
     return piece;
+}
+
+void print_collision(GAME_PIECE * piece,
+                     POINT * p2, TILE_MAP * t2,
+                     POINT * spot,
+                     int player_fail) {
+    POINT * p1 = &piece->next_position;
+    TILE_MAP * t1 = piece->tiles;
+    SIZE s1 = t1->size;
+    SIZE s2 = t2->size;
+    int len1 = sizeof(char) * s1.w * s1.h;
+    int len2 = sizeof(char) * s2.w * s2.h;
+    char * map1 = "<error>";
+    char * map2 = "<error>";
+    int map1b = map_to_string(t1->map, &map1, len1);
+    int map2b = map_to_string(t2->map, &map2, len2);
+
+    fprintf(stderr,
+            "Piece (0x%p) is colliding at (%d,%d). "
+            "Piece is at (%d,%d) with tile map \"%s\" "
+            "and colliding piece is at (%d,%d) with tile map "
+            "\"%s\". %s\n",
+            piece,
+            spot->x, spot->y,
+            p1->x, p1->y,
+            map1,
+            p2->x, p2->y,
+            map2,
+            player_fail ?
+            "Respawning a new piece." :
+            "Piece stopped.");
+
+    if(map1b) free(map1);
+    if(map2b) free(map2);
 }
 
 static int process_logic(GAME_STATE * S) {
