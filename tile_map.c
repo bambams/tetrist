@@ -17,6 +17,9 @@ int tile_map_create(TILE_MAP ** tiles, int w, int h,
 
     memset(*tiles, 0, sizeof(TILE_MAP));
 
+    (*tiles)->w = w;
+    (*tiles)->h = h;
+
     char ** data = &(*tiles)->map;
 
     *data = malloc(sizeof(char) * w * h);
