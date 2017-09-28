@@ -110,6 +110,14 @@ static const char * const piece_tiles[] = {
 
 typedef struct {
     ALLEGRO_BITMAP * sprite;
+    POINT spawn;
+    SIZE bitmap_size;
+    SIZE tile_size;
+    TILE_MAP * tiles;
+} GAME_BOARD;
+
+typedef struct {
+    ALLEGRO_BITMAP * sprite;
     GAME_PIECE_TYPE type;
     POINT position;
     TILE_MAP * tiles;
@@ -123,6 +131,7 @@ typedef struct {
     ALLEGRO_EVENT_QUEUE * events;
     ALLEGRO_TIMER * gfx_timer;
     ALLEGRO_TIMER * logic_timer;
+    GAME_BOARD * game_board;
     LINKED_LIST * pieces;
 
     struct {
@@ -142,9 +151,12 @@ static int create_sprite(ALLEGRO_BITMAP **, int, int);
 static int deinitialize(GAME_STATE *);
 static void draw_block(ALLEGRO_BITMAP *, int, int);
 static void draw_pieces(LINKED_LIST **);
+static void game_board_destroy(GAME_BOARD **);
+static GAME_BOARD * game_board_spawn(GAME_STATE *);
 static int get_x(int reset);
 static int get_y(int reset);
 static int initialize(GAME_STATE *);
+static int initialize_game_board(GAME_STATE *);
 static int initialize_pieces(GAME_STATE *);
 static void piece_destroy(GAME_PIECE **);
 static GAME_PIECE * piece_spawn(GAME_STATE *, GAME_PIECE_TYPE);
@@ -163,11 +175,13 @@ int main(int argc, char * argv[])
         goto exit;
     }
 
-    if(!initialize_pieces(&S)) {
+    if(!initialize_game_board(&S)) {
         S.status = 1;
+        goto exit;
     }
 
-    if(S.status != 0) {
+    if(!initialize_pieces(&S)) {
+        S.status = 1;
         goto exit;
     }
 
@@ -339,9 +353,11 @@ static int deinitialize(GAME_STATE * S)
     ALLEGRO_EVENT_QUEUE ** events = &S->events;
     ALLEGRO_TIMER ** gfx_timer = &S->gfx_timer;
     ALLEGRO_TIMER ** logic_timer = &S->logic_timer;
+    GAME_BOARD ** game_board = &S->game_board;
     LINKED_LIST ** pieces = &S->pieces;
 
     list_destroy(pieces, (void (*)(void **))piece_destroy);
+    game_board_destroy(game_board);
 
     sprite = S->sprites.pieces;
 
@@ -391,6 +407,59 @@ static void draw_pieces(LINKED_LIST ** pieces) {
 
         list = list->next;
     }
+}
+
+static void game_board_destroy(GAME_BOARD ** game_board) {
+    assert(game_board);
+    assert(*game_board);
+
+    free(*game_board);
+    *game_board = NULL;
+}
+
+static GAME_BOARD * game_board_spawn(GAME_STATE * S) {
+    GAME_BOARD * game_board = malloc(sizeof(GAME_BOARD));
+
+    if(game_board == NULL) {
+        return NULL;
+    }
+
+    memset(game_board, 0, sizeof(GAME_BOARD));
+
+    int w = al_get_display_width(S->display);
+    int wt = w / TILE_SIZE;
+    int h = al_get_display_height(S->display);
+    int ht = h / TILE_SIZE;
+    ALLEGRO_BITMAP * sprite = S->sprites.game_board;
+    POINT * spawn = &game_board->spawn;
+    SIZE * bitmap_size = &game_board->bitmap_size;
+    SIZE * tile_size = &game_board->tile_size;
+    TILE_MAP ** tiles = &game_board->tiles;
+
+    if(!tile_map_create(tiles, wt, ht, NULL)) {
+        free(game_board);
+        game_board = NULL;
+        return NULL;
+    }
+
+    for(int y=0; y<ht; y++) {
+        for(int x=0; x<wt; x++) {
+            if(x == 0 || x == wt - 1 || y == 0 || y == ht - 1) {
+                tile_map_set(*tiles, x, y, 1);
+            }
+        }
+    }
+
+    bitmap_size->w = w;
+    bitmap_size->h = h;
+    spawn->x = w / 2;
+    spawn->y = 0;
+    tile_size->w = wt;
+    tile_size->h = ht;
+
+    game_board->sprite = sprite;
+
+    return game_board;
 }
 
 static int get_x(int reset) {
@@ -500,6 +569,18 @@ static int initialize(GAME_STATE * S)
     return 0;
 }
 
+static int initialize_game_board(GAME_STATE * S) {
+    GAME_BOARD ** game_board = &S->game_board;
+
+    *game_board = game_board_spawn(S);
+
+    if(game_board == NULL) {
+        return 0;
+    }
+
+    return 1;
+}
+
 static int initialize_pieces(GAME_STATE * S) {
     LINKED_LIST ** pieces = &S->pieces;
 
@@ -573,7 +654,7 @@ static void process_logic(GAME_STATE * S) {
 static void render_graphics(GAME_STATE * S) {
     al_set_target_bitmap(al_get_backbuffer(S->display));
     al_clear_to_color(white);
-    al_draw_bitmap(S->sprites.game_board, 0, 0, 0);
+    al_draw_bitmap(S->game_board->sprite, 0, 0, 0);
     al_draw_bitmap(S->sprites.block, get_x(1), get_y(1), 0);
     draw_pieces(&S->pieces);
     al_flip_display();
