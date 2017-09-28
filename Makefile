@@ -1,6 +1,6 @@
 ALLEGRO_LIBS = allegro-5 allegro_dialog-5 allegro_primitives-5
 CC = gcc
-CFLAGS = $$(pkg-config --cflags $(ALLEGRO_LIBS))
+CFLAGS = $$(pkg-config --cflags $(ALLEGRO_LIBS)) -Wall
 
 ifdef DEBUG
 	CFLAGS += -g
