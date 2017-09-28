@@ -47,8 +47,16 @@ typedef enum {
 
 typedef struct {
     int x, y;
+} POINT;
+
+typedef struct {
+    int w, h;
+} SIZE;
+
+typedef struct {
     ALLEGRO_BITMAP * sprite;
     GAME_PIECE_TYPE type;
+    POINT position;
 } GAME_PIECE;
 
 typedef struct {
@@ -162,7 +170,7 @@ static void apply_gravity(LINKED_LIST ** pieces) {
     while(list != NULL) {
         GAME_PIECE * piece = list->data;
 
-        piece->y += GRAVITY * TILE_SIZE;
+        piece->position.y += GRAVITY * TILE_SIZE;
 
         list = list->next;
     }
@@ -444,7 +452,9 @@ static void draw_pieces(LINKED_LIST ** pieces) {
     while(list != NULL) {
         GAME_PIECE * piece = list->data;
 
-        al_draw_bitmap(piece->sprite, piece->x, piece->y, 0);
+        al_draw_bitmap(piece->sprite,
+                       piece->position.x, piece->position.y,
+                       0);
 
         list = list->next;
     }
@@ -588,8 +598,8 @@ static int initialize_pieces(GAME_STATE * S) {
     for(GAME_PIECE_TYPE i=PIECE_I; i<NUM_PIECES; i++) {
         GAME_PIECE * piece = piece_spawn(S, i);
 
-        piece->x = get_x(0);
-        piece->y = get_y(0);
+        piece->position.x = get_x(0);
+        piece->position.y = get_y(0);
 
         if(piece == NULL || !list_add(pieces, piece)) {
             goto error;
@@ -628,7 +638,7 @@ static GAME_PIECE * piece_spawn(GAME_STATE * S, GAME_PIECE_TYPE type) {
     int dx = al_get_display_width(S->display);
     int x = dx / 2 - bx / 2;
 
-    piece->x = x;
+    piece->position.x = x;
     piece->sprite = sprite;
     piece->type = type;
 
