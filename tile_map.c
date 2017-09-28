@@ -17,8 +17,8 @@ int tile_map_create(TILE_MAP ** tiles, int w, int h,
 
     memset(*tiles, 0, sizeof(TILE_MAP));
 
-    (*tiles)->w = w;
-    (*tiles)->h = h;
+    (*tiles)->size.w = w;
+    (*tiles)->size.h = h;
 
     char ** data = &(*tiles)->map;
 
@@ -60,7 +60,7 @@ char tile_map_get(TILE_MAP * tiles, int x, int y) {
 
     char * map = tiles->map;
 
-    return tile_map_get_aux(map, tiles->w, x, y);
+    return tile_map_get_aux(map, tiles->size.w, x, y);
 }
 
 char tile_map_get_aux(const char * const map, int w, int x, int y) {
@@ -77,7 +77,7 @@ char tile_map_set(TILE_MAP * tiles, int x, int y, char flag) {
 
     char * map = tiles->map;
 
-    return tile_map_set_aux(map, tiles->w, x, y, flag);
+    return tile_map_set_aux(map, tiles->size.w, x, y, flag);
 }
 
 char tile_map_set_aux(char * const map, int w, int x, int y, char flag) {
