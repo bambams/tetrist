@@ -10,6 +10,7 @@
 #define blue (al_map_rgb(0, 0, 255))
 #define cyan (al_map_rgb(0, 255, 255))
 #define dgray (al_map_rgb(50, 50, 50))
+#define gray (al_map_rgb(75, 75, 75))
 #define green (al_map_rgb(0, 255, 0))
 #define lgray (al_map_rgb(100, 100, 100))
 #define magicpink (al_map_rgb(255, 0, 255))
@@ -61,6 +62,7 @@ typedef struct {
 
     struct {
         ALLEGRO_BITMAP * block;
+        ALLEGRO_BITMAP * game_board;
         ALLEGRO_BITMAP * pieces[7];
     } sprites;
 
@@ -71,6 +73,7 @@ static void apply_gravity(LINKED_LIST **);
 static int create_block(ALLEGRO_BITMAP **, ALLEGRO_COLOR);
 static int create_block_shaded(ALLEGRO_BITMAP **, ALLEGRO_COLOR,
                         ALLEGRO_COLOR, ALLEGRO_COLOR);
+static int create_game_board(GAME_STATE *);
 static int create_piece_i(ALLEGRO_BITMAP **);
 static int create_piece_j(ALLEGRO_BITMAP **);
 static int create_piece_l(ALLEGRO_BITMAP **);
@@ -182,6 +185,38 @@ static int create_block_shaded(ALLEGRO_BITMAP ** sprite,
     al_draw_line(_1T, _1T - 4/2, _0T, _1T - 4/2, bottomright, 4);
     al_draw_line(_0T, _0T + 4/2, _1T, _0T + 4/2, topleft, 4);
     al_draw_line(_0T + 4/2, _1T, _0T + 4/2, _0T, topleft, 4);
+
+    return 1;
+}
+
+static int create_game_board(GAME_STATE * S) {
+    int w = al_get_display_width(S->display);
+    int h = al_get_display_height(S->display);
+    int tw = w / TILE_SIZE;
+    int th = h / TILE_SIZE;
+    ALLEGRO_BITMAP ** sprite = &S->sprites.game_board;
+
+    if(!create_sprite(sprite, tw, th)) {
+        return 0;
+    }
+
+    ALLEGRO_BITMAP * block = NULL;
+
+    if(!create_block(&block, gray)) {
+        al_destroy_bitmap(*sprite);
+        *sprite = NULL;
+        return 0;
+    }
+
+    al_set_target_bitmap(*sprite);
+
+    for(int y=0; y<th; y++) {
+        for(int x=0; x<tw; x++) {
+            if(x == 0 || x == tw - 1 || y == 0 || y == th - 1) {
+                al_draw_bitmap(block, x * TILE_SIZE, y * TILE_SIZE, 0);
+            }
+        }
+    }
 
     return 1;
 }
@@ -505,34 +540,40 @@ static int initialize(GAME_STATE * S)
         return 8;
     }
 
+    sprite = &S->sprites.game_board;
+
+    if(!create_game_board(S)) {
+        return 8;
+    }
+
     sprite = S->sprites.pieces;
 
     if(!create_piece_i(sprite)) {
-        return 9;
-    }
-
-    if(!create_piece_j(++sprite)) {
         return 10;
     }
 
-    if(!create_piece_l(++sprite)) {
+    if(!create_piece_j(++sprite)) {
         return 11;
     }
 
-    if(!create_piece_o(++sprite)) {
+    if(!create_piece_l(++sprite)) {
         return 12;
     }
 
-    if(!create_piece_s(++sprite)) {
+    if(!create_piece_o(++sprite)) {
         return 13;
     }
 
-    if(!create_piece_t(++sprite)) {
+    if(!create_piece_s(++sprite)) {
         return 14;
     }
 
-    if(!create_piece_z(++sprite)) {
+    if(!create_piece_t(++sprite)) {
         return 15;
+    }
+
+    if(!create_piece_z(++sprite)) {
+        return 16;
     }
 
     return 0;
@@ -601,6 +642,7 @@ static void process_logic(GAME_STATE * S) {
 static void render_graphics(GAME_STATE * S) {
     al_set_target_bitmap(al_get_backbuffer(S->display));
     al_clear_to_color(white);
+    al_draw_bitmap(S->sprites.game_board, 0, 0, 0);
     al_draw_bitmap(S->sprites.block, get_x(1), get_y(1), 0);
     draw_pieces(&S->pieces);
     al_flip_display();
