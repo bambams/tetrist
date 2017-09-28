@@ -30,7 +30,7 @@ rerun: rebuild
 	$(EXE)
 
 $(EXE): $(OBJECTS)
-	$(CC) -o $@ $? $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $? $(LIBS)
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) -o $@ $<
