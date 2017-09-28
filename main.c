@@ -231,7 +231,7 @@ static void apply_gravity(LINKED_LIST ** pieces) {
     while(list != NULL) {
         GAME_PIECE * piece = list->data;
 
-        piece->position.y += GRAVITY * TILE_SIZE;
+        piece->position.y += GRAVITY;
 
         list = list->next;
     }
@@ -399,7 +399,7 @@ static void draw_pieces(LINKED_LIST ** pieces) {
         GAME_PIECE * piece = list->data;
 
         al_draw_bitmap(piece->sprite,
-                       piece->position.x, piece->position.y,
+                       _XT(piece->position.x), _XT(piece->position.y),
                        0);
 
         list = list->next;
@@ -449,7 +449,7 @@ static GAME_BOARD * game_board_spawn(GAME_STATE * S) {
 
     bitmap_size->w = w;
     bitmap_size->h = h;
-    spawn->x = w / 2;
+    spawn->x = wt / 2;
     spawn->y = 0;
     tile_size->w = wt;
     tile_size->h = ht;
@@ -582,7 +582,7 @@ static GAME_PIECE * piece_spawn(GAME_STATE * S, GAME_PIECE_TYPE type) {
     }
 
     ALLEGRO_BITMAP * sprite = S->sprites.pieces[type];
-    int w = al_get_bitmap_width(sprite);
+    int w = size->w;
 
     piece->position.x = spawn->x - w / 2;
     piece->position.y = spawn->y;
