@@ -123,14 +123,13 @@ typedef struct {
     ALLEGRO_EVENT_QUEUE * events;
     ALLEGRO_TIMER * gfx_timer;
     ALLEGRO_TIMER * logic_timer;
+    LINKED_LIST * pieces;
 
     struct {
         ALLEGRO_BITMAP * block;
         ALLEGRO_BITMAP * game_board;
         ALLEGRO_BITMAP * pieces[7];
     } sprites;
-
-    LINKED_LIST * pieces;
 } GAME_STATE;
 
 static void apply_gravity(LINKED_LIST **);
