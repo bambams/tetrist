@@ -88,18 +88,22 @@ static void draw_block(ALLEGRO_BITMAP *, int, int);
 static void draw_pieces(LINKED_LIST **);
 static void game_board_destroy(GAME_BOARD **);
 static GAME_BOARD * game_board_spawn(GAME_STATE *);
-static int handle_landing(GAME_STATE *, GAME_PIECE *, int);
+static int handle_landing(GAME_STATE *, GAME_PIECE *,
+                          int, POINT *, TILE_MAP *, POINT *);
 static int initialize(GAME_STATE *);
 static int initialize_game_board(GAME_STATE *);
+static int map_to_string(char *, char **, int);
 static GAME_PIECE_TYPE next_piece_type(GAME_STATE *);
 static void piece_destroy(GAME_PIECE **);
 static GAME_PIECE * piece_spawn(GAME_STATE *, GAME_PIECE_TYPE);
 static int process_logic(GAME_STATE *);
 static void render_graphics(GAME_STATE *);
 static void resolve_movement(GAME_STATE *, GAME_PIECE *,
-                             int (*)(GAME_STATE *, GAME_PIECE *, int));
+                             int (*)(GAME_STATE *, GAME_PIECE *,
+                                     int, POINT *, TILE_MAP *, POINT *));
 static void resolve_movements(GAME_STATE *,
-                             int (*)(GAME_STATE *, GAME_PIECE *, int));
+                             int (*)(GAME_STATE *, GAME_PIECE *,
+                                     int, POINT *, TILE_MAP *, POINT *));
 static int spawn_next_piece(GAME_STATE *);
 
 static const RGB piece_colors[] = {
@@ -469,16 +473,47 @@ static GAME_BOARD * game_board_spawn(GAME_STATE * S) {
 
 static int handle_landing(GAME_STATE * S,
                           GAME_PIECE * piece,
-                          int collision) {
+                          int collision,
+                          POINT * p2,
+                          TILE_MAP * t2,
+                          POINT * spot) {
     GAME_PIECE * current_piece = S->current_piece;
     int * noclip = &piece->noclip;
 
     if(piece == current_piece) {
         if(collision) {
+            POINT * p1 = &piece->next_position;
+            TILE_MAP * t1 = piece->tiles;
+            SIZE s1 = t1->size;
+            SIZE s2 = t2->size;
+            int len1 = sizeof(char) * s1.w * s1.h;
+            int len2 = sizeof(char) * s2.w * s2.h;
+            char * map1 = "<error>";
+            char * map2 = "<error>";
+
+            map_to_string(t1->map, &map1, len1);
+            map_to_string(t2->map, &map2, len2);
+
+            fprintf(stderr,
+                    "Current piece (0x%p) is colliding at (%d,%d). "
+                    "Current piece is at (%d,%d) with tile map \"%s\" "
+                    "and colliding piece is at (%d,%d) with tile map "
+                    "\"%s\". Respawning a new piece.\n",
+                    piece,
+                    spot->x, spot->y,
+                    p1->x, p1->y,
+                    map1,
+                    p2->x, p2->y,
+                    map2);
+
             if(!*noclip) {
                 S->respawn = 1;
             }
-        } else {
+        } else if(*noclip) {
+            fprintf(stderr,
+                    "Current piece (0x%p) is no longer colliding. "
+                    "No clipping is now off.\n",
+                    piece);
             *noclip = 0;
         }
     }
@@ -562,6 +597,22 @@ static int initialize_game_board(GAME_STATE * S) {
     if(game_board == NULL) {
         return 0;
     }
+
+    return 1;
+}
+
+static int map_to_string(char * src, char ** dest, int len) {
+    *dest = malloc(len + 1);
+
+    if(*dest == NULL) {
+        return 0;
+    }
+
+    for(int i=0; i<len; i++) {
+        (*dest)[i] = '0' + src[i];
+    }
+
+    (*dest)[len] = '\0';
 
     return 1;
 }
@@ -652,14 +703,18 @@ static void render_graphics(GAME_STATE * S) {
 static void resolve_movement(GAME_STATE * S, GAME_PIECE * piece,
                              int (*handler)(GAME_STATE *,
                                             GAME_PIECE *,
-                                            int collision)) {
+                                            int collision,
+                                            POINT *,
+                                            TILE_MAP *,
+                                            POINT *)) {
     GAME_BOARD * game_board = S->game_board;
     LINKED_LIST * list = S->pieces;
     POINT p1 = piece->next_position;
     POINT p2 = {0,0};
     TILE_MAP * t1 = piece->tiles;
     TILE_MAP * t2 = game_board->tiles;
-    int collision = collision_detected(p1, t1, p2, t2);
+    POINT spot;
+    int collision = collision_detected(p1, t1, p2, t2, &spot);
 
     while(!collision && list != NULL) {
         GAME_PIECE * other_piece = list->data;
@@ -668,14 +723,14 @@ static void resolve_movement(GAME_STATE * S, GAME_PIECE * piece,
             p2 = other_piece->next_position;
             t2 = other_piece->tiles;
 
-            collision = collision_detected(p1, t1, p2, t2);
+            collision = collision_detected(p1, t1, p2, t2, &spot);
         }
 
         list = list->next;
     }
 
     if(handler != NULL) {
-        collision = handler(S, piece, collision);
+        collision = handler(S, piece, collision, &p2, t2, &spot);
     }
 
     if(!collision) {
@@ -688,7 +743,10 @@ static void resolve_movement(GAME_STATE * S, GAME_PIECE * piece,
 static void resolve_movements(GAME_STATE * S,
                               int (*handler)(GAME_STATE *,
                                              GAME_PIECE *,
-                                             int collision)) {
+                                             int collision,
+                                             POINT *,
+                                             TILE_MAP *,
+                                             POINT *)) {
     LINKED_LIST * list = S->pieces;
 
     while(list != NULL) {

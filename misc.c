@@ -1,7 +1,8 @@
 #include "misc.h"
 
 int collision_detected(POINT p1, TILE_MAP * t1,
-                       POINT p2, TILE_MAP * t2) {
+                       POINT p2, TILE_MAP * t2,
+                       POINT * spot) {
     SIZE s1 = t1->size;
     SIZE s2 = t2->size;
 
@@ -25,6 +26,9 @@ int collision_detected(POINT p1, TILE_MAP * t1,
             int c2 = tile_map_get(t2, x2, y2);
 
             if(c2) {
+                spot->x = bx;
+                spot->y = by;
+
                 return 1;
             }
         }

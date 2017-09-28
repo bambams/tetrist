@@ -22,6 +22,6 @@ typedef struct SIZE SIZE;
     #include "tile_map.h"
 
 ALLEGRO_COLOR rgb_to_color(RGB);
-int collision_detected(POINT, TILE_MAP *, POINT, TILE_MAP *);
+int collision_detected(POINT, TILE_MAP *, POINT, TILE_MAP *, POINT *);
 
 #endif
