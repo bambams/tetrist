@@ -50,6 +50,60 @@ typedef struct {
     int w, h;
 } SIZE;
 
+typedef struct {
+    ALLEGRO_BITMAP * sprite;
+    POINT spawn;
+    SIZE bitmap_size;
+    SIZE tile_size;
+    TILE_MAP * tiles;
+} GAME_BOARD;
+
+typedef struct {
+    ALLEGRO_BITMAP * sprite;
+    GAME_PIECE_TYPE type;
+    POINT position;
+    TILE_MAP * tiles;
+} GAME_PIECE;
+
+typedef struct {
+    int quit;
+    int status;
+
+    ALLEGRO_DISPLAY * display;
+    ALLEGRO_EVENT_QUEUE * events;
+    ALLEGRO_TIMER * gfx_timer;
+    ALLEGRO_TIMER * logic_timer;
+    GAME_BOARD * game_board;
+    LINKED_LIST * pieces;
+
+    struct {
+        ALLEGRO_BITMAP * game_board;
+        ALLEGRO_BITMAP * pieces[7];
+    } sprites;
+} GAME_STATE;
+
+static void apply_gravity(LINKED_LIST **);
+static int create_block(ALLEGRO_BITMAP **, ALLEGRO_COLOR);
+static int create_block_shaded(ALLEGRO_BITMAP **, ALLEGRO_COLOR,
+                        ALLEGRO_COLOR, ALLEGRO_COLOR);
+static int create_game_board(GAME_STATE *);
+static int create_piece_sprite(ALLEGRO_BITMAP **, GAME_PIECE_TYPE);
+static int create_sprite(ALLEGRO_BITMAP **, int, int);
+static int deinitialize(GAME_STATE *);
+static void draw_block(ALLEGRO_BITMAP *, int, int);
+static void draw_pieces(LINKED_LIST **);
+static void game_board_destroy(GAME_BOARD **);
+static GAME_BOARD * game_board_spawn(GAME_STATE *);
+static int initialize(GAME_STATE *);
+static int initialize_game_board(GAME_STATE *);
+static GAME_PIECE_TYPE next_piece_type(GAME_STATE *);
+static void piece_destroy(GAME_PIECE **);
+static GAME_PIECE * piece_spawn(GAME_STATE *, GAME_PIECE_TYPE);
+static void process_logic(GAME_STATE *);
+static void render_graphics(GAME_STATE *);
+ALLEGRO_COLOR rgb_to_color(RGB);
+static int spawn_next_piece(GAME_STATE *);
+
 static const RGB piece_colors[] = {
     // I
     {0, 255, 255},
@@ -106,60 +160,6 @@ static const char * const piece_tiles[] = {
     "\1\1\0"
     "\0\1\1"
 };
-
-typedef struct {
-    ALLEGRO_BITMAP * sprite;
-    POINT spawn;
-    SIZE bitmap_size;
-    SIZE tile_size;
-    TILE_MAP * tiles;
-} GAME_BOARD;
-
-typedef struct {
-    ALLEGRO_BITMAP * sprite;
-    GAME_PIECE_TYPE type;
-    POINT position;
-    TILE_MAP * tiles;
-} GAME_PIECE;
-
-typedef struct {
-    int quit;
-    int status;
-
-    ALLEGRO_DISPLAY * display;
-    ALLEGRO_EVENT_QUEUE * events;
-    ALLEGRO_TIMER * gfx_timer;
-    ALLEGRO_TIMER * logic_timer;
-    GAME_BOARD * game_board;
-    LINKED_LIST * pieces;
-
-    struct {
-        ALLEGRO_BITMAP * game_board;
-        ALLEGRO_BITMAP * pieces[7];
-    } sprites;
-} GAME_STATE;
-
-static void apply_gravity(LINKED_LIST **);
-static int create_block(ALLEGRO_BITMAP **, ALLEGRO_COLOR);
-static int create_block_shaded(ALLEGRO_BITMAP **, ALLEGRO_COLOR,
-                        ALLEGRO_COLOR, ALLEGRO_COLOR);
-static int create_game_board(GAME_STATE *);
-static int create_piece_sprite(ALLEGRO_BITMAP **, GAME_PIECE_TYPE);
-static int create_sprite(ALLEGRO_BITMAP **, int, int);
-static int deinitialize(GAME_STATE *);
-static void draw_block(ALLEGRO_BITMAP *, int, int);
-static void draw_pieces(LINKED_LIST **);
-static void game_board_destroy(GAME_BOARD **);
-static GAME_BOARD * game_board_spawn(GAME_STATE *);
-static int initialize(GAME_STATE *);
-static int initialize_game_board(GAME_STATE *);
-static GAME_PIECE_TYPE next_piece_type(GAME_STATE *);
-static void piece_destroy(GAME_PIECE **);
-static GAME_PIECE * piece_spawn(GAME_STATE *, GAME_PIECE_TYPE);
-static void process_logic(GAME_STATE *);
-static void render_graphics(GAME_STATE *);
-static ALLEGRO_COLOR rgb_to_color(RGB);
-static int spawn_next_piece(GAME_STATE *);
 
 int main(int argc, char * argv[])
 {
