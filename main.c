@@ -112,6 +112,7 @@ typedef struct {
     ALLEGRO_BITMAP * sprite;
     GAME_PIECE_TYPE type;
     POINT position;
+    TILE_MAP * tiles;
 } GAME_PIECE;
 
 typedef struct {
@@ -542,6 +543,16 @@ static GAME_PIECE * piece_spawn(GAME_STATE * S, GAME_PIECE_TYPE type) {
     }
 
     memset(piece, 0, sizeof(GAME_PIECE));
+
+    const char * const map = piece_tiles[type];
+    const SIZE * const size = &piece_sizes[type];
+    TILE_MAP ** tiles = &piece->tiles;
+
+    if(!tile_map_create(tiles, size->w, size->h, map)) {
+        free(piece);
+        piece = NULL;
+        return NULL;
+    }
 
     ALLEGRO_BITMAP * sprite = S->sprites.pieces[type];
 
