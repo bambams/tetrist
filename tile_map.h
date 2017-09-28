@@ -1,7 +1,7 @@
 #ifndef TILE_MAP_H
     #define TILE_MAP_H
 
-#define TILE_MAP_ADDRESS(w, x, y) (y * w + x)
+    #define TILE_MAP_ADDRESS(w, x, y) (y * w + x)
 
 typedef struct {
     int w, h;
