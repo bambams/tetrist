@@ -49,6 +49,7 @@ typedef struct {
 
 typedef struct {
     int moving;
+    int noclip;
     ALLEGRO_BITMAP * sprite;
     GAME_PIECE_TYPE type;
     POINT next_position;
@@ -87,7 +88,7 @@ static void draw_block(ALLEGRO_BITMAP *, int, int);
 static void draw_pieces(LINKED_LIST **);
 static void game_board_destroy(GAME_BOARD **);
 static GAME_BOARD * game_board_spawn(GAME_STATE *);
-static int handle_landing(GAME_STATE *, GAME_PIECE *);
+static int handle_landing(GAME_STATE *, GAME_PIECE *, int);
 static int initialize(GAME_STATE *);
 static int initialize_game_board(GAME_STATE *);
 static GAME_PIECE_TYPE next_piece_type(GAME_STATE *);
@@ -96,9 +97,9 @@ static GAME_PIECE * piece_spawn(GAME_STATE *, GAME_PIECE_TYPE);
 static int process_logic(GAME_STATE *);
 static void render_graphics(GAME_STATE *);
 static void resolve_movement(GAME_STATE *, GAME_PIECE *,
-                             int (*)(GAME_STATE *, GAME_PIECE *));
+                             int (*)(GAME_STATE *, GAME_PIECE *, int));
 static void resolve_movements(GAME_STATE *,
-                             int (*)(GAME_STATE *, GAME_PIECE *));
+                             int (*)(GAME_STATE *, GAME_PIECE *, int));
 static int spawn_next_piece(GAME_STATE *);
 
 static const RGB piece_colors[] = {
@@ -466,12 +467,23 @@ static GAME_BOARD * game_board_spawn(GAME_STATE * S) {
     return game_board;
 }
 
-static int handle_landing(GAME_STATE * S, GAME_PIECE * piece) {
-    if(piece == S->current_piece) {
-        S->respawn = 1;
+static int handle_landing(GAME_STATE * S,
+                          GAME_PIECE * piece,
+                          int collision) {
+    GAME_PIECE * current_piece = S->current_piece;
+    int * noclip = &piece->noclip;
+
+    if(piece == current_piece) {
+        if(collision) {
+            if(!*noclip) {
+                S->respawn = 1;
+            }
+        } else {
+            *noclip = 0;
+        }
     }
 
-    return 0;
+    return *noclip ? 0 : collision;
 }
 
 static int initialize(GAME_STATE * S)
@@ -597,6 +609,7 @@ static GAME_PIECE * piece_spawn(GAME_STATE * S, GAME_PIECE_TYPE type) {
     ALLEGRO_BITMAP * sprite = S->sprites.pieces[type];
     int w = size->w;
 
+    piece->noclip = 1;
     piece->position.x = spawn->x - w / 2;
     piece->position.y = spawn->y;
     piece->sprite = sprite;
@@ -637,7 +650,9 @@ static void render_graphics(GAME_STATE * S) {
 }
 
 static void resolve_movement(GAME_STATE * S, GAME_PIECE * piece,
-                             int (*handler)(GAME_STATE *, GAME_PIECE *)) {
+                             int (*handler)(GAME_STATE *,
+                                            GAME_PIECE *,
+                                            int collision)) {
     GAME_BOARD * game_board = S->game_board;
     LINKED_LIST * list = S->pieces;
     POINT p1 = piece->next_position;
@@ -659,8 +674,8 @@ static void resolve_movement(GAME_STATE * S, GAME_PIECE * piece,
         list = list->next;
     }
 
-    if(collision && handler != NULL) {
-        collision = !handler(S, piece);
+    if(handler != NULL) {
+        collision = handler(S, piece, collision);
     }
 
     if(!collision) {
@@ -672,7 +687,8 @@ static void resolve_movement(GAME_STATE * S, GAME_PIECE * piece,
 
 static void resolve_movements(GAME_STATE * S,
                               int (*handler)(GAME_STATE *,
-                                             GAME_PIECE *)) {
+                                             GAME_PIECE *,
+                                             int collision)) {
     LINKED_LIST * list = S->pieces;
 
     while(list != NULL) {
