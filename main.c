@@ -65,6 +65,7 @@ typedef struct {
     ALLEGRO_TIMER * gfx_timer;
     ALLEGRO_TIMER * logic_timer;
     GAME_BOARD * game_board;
+    GAME_PIECE * current_piece;
     LINKED_LIST * pieces;
 
     struct {
@@ -593,6 +594,8 @@ static GAME_PIECE * piece_spawn(GAME_STATE * S, GAME_PIECE_TYPE type) {
         piece = NULL;
         return NULL;
     }
+
+    S->current_piece = piece;
 
     return piece;
 }
