@@ -48,8 +48,10 @@ typedef struct {
 } GAME_BOARD;
 
 typedef struct {
+    int moving;
     ALLEGRO_BITMAP * sprite;
     GAME_PIECE_TYPE type;
+    POINT next_position;
     POINT position;
     TILE_MAP * tiles;
 } GAME_PIECE;
@@ -71,7 +73,7 @@ typedef struct {
     } sprites;
 } GAME_STATE;
 
-static void apply_gravity(LINKED_LIST **);
+static void apply_gravity(GAME_STATE *);
 static int create_block(ALLEGRO_BITMAP **, ALLEGRO_COLOR);
 static int create_block_shaded(ALLEGRO_BITMAP **, ALLEGRO_COLOR,
                         ALLEGRO_COLOR, ALLEGRO_COLOR);
@@ -90,6 +92,8 @@ static void piece_destroy(GAME_PIECE **);
 static GAME_PIECE * piece_spawn(GAME_STATE *, GAME_PIECE_TYPE);
 static void process_logic(GAME_STATE *);
 static void render_graphics(GAME_STATE *);
+static void resolve_movement(GAME_STATE *, GAME_PIECE *);
+static void resolve_movements(GAME_STATE *);
 static int spawn_next_piece(GAME_STATE *);
 
 static const RGB piece_colors[] = {
@@ -213,16 +217,22 @@ exit:
     return S.status;
 }
 
-static void apply_gravity(LINKED_LIST ** pieces) {
-    LINKED_LIST * list = *pieces;
+static void apply_gravity(GAME_STATE * S) {
+    LINKED_LIST * list = S->pieces;
 
     while(list != NULL) {
         GAME_PIECE * piece = list->data;
+        POINT next = piece->position;
 
-        piece->position.y += GRAVITY;
+        next.y += GRAVITY;
+
+        piece->moving = 1;
+        piece->next_position = next;
 
         list = list->next;
     }
+
+    resolve_movements(S);
 }
 
 static int create_block(ALLEGRO_BITMAP ** sprite, ALLEGRO_COLOR fill) {
@@ -588,7 +598,7 @@ static GAME_PIECE * piece_spawn(GAME_STATE * S, GAME_PIECE_TYPE type) {
 }
 
 static void process_logic(GAME_STATE * S) {
-    apply_gravity(&S->pieces);
+    apply_gravity(S);
 }
 
 static void render_graphics(GAME_STATE * S) {
@@ -599,8 +609,45 @@ static void render_graphics(GAME_STATE * S) {
     al_flip_display();
 }
 
-static ALLEGRO_COLOR rgb_to_color(RGB rgb) {
-    return al_map_rgb(rgb.r, rgb.g, rgb.b);
+static void resolve_movement(GAME_STATE * S, GAME_PIECE * piece) {
+    GAME_BOARD * game_board = S->game_board;
+    LINKED_LIST * list = S->pieces;
+    POINT p1 = piece->next_position;
+    POINT p2 = {0,0};
+    TILE_MAP * t1 = piece->tiles;
+    TILE_MAP * t2 = game_board->tiles;
+    int collision = collision_detected(p1, t1, p2, t2);
+
+    while(!collision && list != NULL) {
+        GAME_PIECE * other_piece = list->data;
+
+        if(piece != other_piece) {
+            p2 = other_piece->next_position;
+            t2 = other_piece->tiles;
+
+            collision = collision_detected(p1, t1, p2, t2);
+        }
+
+        list = list->next;
+    }
+
+    if(!collision) {
+        piece->position = piece->next_position;
+    }
+
+    piece->moving = 0;
+}
+
+static void resolve_movements(GAME_STATE * S) {
+    LINKED_LIST * list = S->pieces;
+
+    while(list != NULL) {
+        GAME_PIECE * piece = list->data;
+
+        resolve_movement(S, piece);
+
+        list = list->next;
+    }
 }
 
 static int spawn_next_piece(GAME_STATE * S) {
