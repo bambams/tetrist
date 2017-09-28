@@ -89,7 +89,8 @@ static void draw_pieces(LINKED_LIST **);
 static void game_board_destroy(GAME_BOARD **);
 static GAME_BOARD * game_board_spawn(GAME_STATE *);
 static int handle_landing(GAME_STATE *, GAME_PIECE *,
-                          int, POINT *, TILE_MAP *, POINT *);
+                          int, int,
+                          POINT *, TILE_MAP *, POINT *);
 static int initialize(GAME_STATE *);
 static int initialize_game_board(GAME_STATE *);
 static int map_to_string(char *, char **, int);
@@ -100,10 +101,12 @@ static int process_logic(GAME_STATE *);
 static void render_graphics(GAME_STATE *);
 static void resolve_movement(GAME_STATE *, GAME_PIECE *,
                              int (*)(GAME_STATE *, GAME_PIECE *,
-                                     int, POINT *, TILE_MAP *, POINT *));
+                                     int, int,
+                                     POINT *, TILE_MAP *, POINT *));
 static void resolve_movements(GAME_STATE *,
                              int (*)(GAME_STATE *, GAME_PIECE *,
-                                     int, POINT *, TILE_MAP *, POINT *));
+                                     int, int,
+                                     POINT *, TILE_MAP *, POINT *));
 static int spawn_next_piece(GAME_STATE *);
 
 static const RGB piece_colors[] = {
@@ -484,6 +487,7 @@ static GAME_BOARD * game_board_spawn(GAME_STATE * S) {
 static int handle_landing(GAME_STATE * S,
                           GAME_PIECE * piece,
                           int collision,
+                          int game_board_collision,
                           POINT * p2,
                           TILE_MAP * t2,
                           POINT * spot) {
@@ -503,6 +507,8 @@ static int handle_landing(GAME_STATE * S,
 
         int map1b = map_to_string(t1->map, &map1, len1);
         int map2b = map_to_string(t2->map, &map2, len2);
+        int player_fail = piece == current_piece &&
+                !(game_board_collision && *noclip);
 
         fprintf(stderr,
                 "Piece (0x%p) is colliding at (%d,%d). "
@@ -752,7 +758,7 @@ static void render_graphics(GAME_STATE * S) {
 static void resolve_movement(GAME_STATE * S, GAME_PIECE * piece,
                              int (*handler)(GAME_STATE *,
                                             GAME_PIECE *,
-                                            int collision,
+                                            int, int,
                                             POINT *,
                                             TILE_MAP *,
                                             POINT *)) {
@@ -764,6 +770,7 @@ static void resolve_movement(GAME_STATE * S, GAME_PIECE * piece,
     TILE_MAP * t2 = game_board->tiles;
     POINT spot;
     int collision = collision_detected(p1, t1, p2, t2, &spot);
+    int game_board_collision = collision;
 
     while(!collision && list != NULL) {
         GAME_PIECE * other_piece = list->data;
@@ -779,7 +786,10 @@ static void resolve_movement(GAME_STATE * S, GAME_PIECE * piece,
     }
 
     if(handler != NULL) {
-        collision = handler(S, piece, collision, &p2, t2, &spot);
+        collision = handler(S, piece,
+                            collision,
+                            game_board_collision,
+                            &p2, t2, &spot);
     }
 
     if(!collision) {
@@ -795,7 +805,7 @@ static void resolve_movement(GAME_STATE * S, GAME_PIECE * piece,
 static void resolve_movements(GAME_STATE * S,
                               int (*handler)(GAME_STATE *,
                                              GAME_PIECE *,
-                                             int collision,
+                                             int, int,
                                              POINT *,
                                              TILE_MAP *,
                                              POINT *)) {
