@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 #include "list.h"
+#include "misc.h"
 #include "tile_map.h"
 
 #define black (al_map_rgb(0, 0, 0))
@@ -27,10 +28,6 @@ const int TILE_SIZE = 40;
 #define _4T (_XT(4))
 #define _5T (_XT(5))
 
-typedef struct {
-    int r, g, b;
-} RGB;
-
 typedef enum {
     PIECE_I,
     PIECE_J,
@@ -41,14 +38,6 @@ typedef enum {
     PIECE_Z,
     NUM_PIECES
 } GAME_PIECE_TYPE;
-
-typedef struct {
-    int x, y;
-} POINT;
-
-typedef struct {
-    int w, h;
-} SIZE;
 
 typedef struct {
     ALLEGRO_BITMAP * sprite;
@@ -101,7 +90,6 @@ static void piece_destroy(GAME_PIECE **);
 static GAME_PIECE * piece_spawn(GAME_STATE *, GAME_PIECE_TYPE);
 static void process_logic(GAME_STATE *);
 static void render_graphics(GAME_STATE *);
-ALLEGRO_COLOR rgb_to_color(RGB);
 static int spawn_next_piece(GAME_STATE *);
 
 static const RGB piece_colors[] = {
