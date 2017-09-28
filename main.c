@@ -490,45 +490,51 @@ static int handle_landing(GAME_STATE * S,
     GAME_PIECE * current_piece = S->current_piece;
     int * noclip = &piece->noclip;
 
-    if(piece == current_piece) {
-        if(collision) {
-            POINT * p1 = &piece->next_position;
-            TILE_MAP * t1 = piece->tiles;
-            SIZE s1 = t1->size;
-            SIZE s2 = t2->size;
-            int len1 = sizeof(char) * s1.w * s1.h;
-            int len2 = sizeof(char) * s2.w * s2.h;
-            char * map1 = "<error>";
-            char * map2 = "<error>";
+    if(collision) {
+        POINT * p1 = &piece->next_position;
+        TILE_MAP * t1 = piece->tiles;
+        SIZE s1 = t1->size;
+        SIZE s2 = t2->size;
+        int len1 = sizeof(char) * s1.w * s1.h;
+        int len2 = sizeof(char) * s2.w * s2.h;
+        char * map1 = "<error>";
+        char * map2 = "<error>";
+        int player_fail = piece == current_piece && !*noclip;
 
-            int map1b = map_to_string(t1->map, &map1, len1);
-            int map2b = map_to_string(t2->map, &map2, len2);
+        int map1b = map_to_string(t1->map, &map1, len1);
+        int map2b = map_to_string(t2->map, &map2, len2);
 
-            fprintf(stderr,
-                    "Piece (0x%p) is colliding at (%d,%d). "
-                    "Piece is at (%d,%d) with tile map \"%s\" "
-                    "and colliding piece is at (%d,%d) with tile map "
-                    "\"%s\". Respawning a new piece.\n",
-                    piece,
-                    spot->x, spot->y,
-                    p1->x, p1->y,
-                    map1,
-                    p2->x, p2->y,
-                    map2);
+        fprintf(stderr,
+                "Piece (0x%p) is colliding at (%d,%d). "
+                "Piece is at (%d,%d) with tile map \"%s\" "
+                "and colliding piece is at (%d,%d) with tile map "
+                "\"%s\". %s\n",
+                piece,
+                spot->x, spot->y,
+                p1->x, p1->y,
+                map1,
+                p2->x, p2->y,
+                map2,
+                player_fail ?
+                "Respawning a new piece." :
+                "Piece stopped.");
 
-            if(map1b) free(map1);
-            if(map2b) free(map2);
+        if(map1b) free(map1);
+        if(map2b) free(map2);
 
-            if(!*noclip) {
-                S->respawn = 1;
-            }
-        } else if(*noclip) {
-            fprintf(stderr,
-                    "Piece (0x%p) is no longer colliding. "
-                    "No clipping is now off.\n",
-                    piece);
-            *noclip = 0;
+        if(player_fail) {
+            S->respawn = 1;
         }
+    } else if(piece == current_piece && *noclip) {
+        fprintf(stderr,
+                "Current piece (0x%p) is no longer colliding. "
+                "No clipping is now off.\n",
+                piece);
+        *noclip = 0;
+    } else {
+        fprintf(stderr,
+                "Piece (0x%p) is no longer colliding.\n",
+                piece);
     }
 
     return *noclip ? 0 : collision;
