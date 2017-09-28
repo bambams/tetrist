@@ -58,6 +58,7 @@ typedef struct {
 
 typedef struct {
     int quit;
+    int respawn;
     int status;
 
     ALLEGRO_DISPLAY * display;
@@ -86,15 +87,18 @@ static void draw_block(ALLEGRO_BITMAP *, int, int);
 static void draw_pieces(LINKED_LIST **);
 static void game_board_destroy(GAME_BOARD **);
 static GAME_BOARD * game_board_spawn(GAME_STATE *);
+static int handle_landing(GAME_STATE *, GAME_PIECE *);
 static int initialize(GAME_STATE *);
 static int initialize_game_board(GAME_STATE *);
 static GAME_PIECE_TYPE next_piece_type(GAME_STATE *);
 static void piece_destroy(GAME_PIECE **);
 static GAME_PIECE * piece_spawn(GAME_STATE *, GAME_PIECE_TYPE);
-static void process_logic(GAME_STATE *);
+static int process_logic(GAME_STATE *);
 static void render_graphics(GAME_STATE *);
-static void resolve_movement(GAME_STATE *, GAME_PIECE *);
-static void resolve_movements(GAME_STATE *);
+static void resolve_movement(GAME_STATE *, GAME_PIECE *,
+                             int (*)(GAME_STATE *, GAME_PIECE *));
+static void resolve_movements(GAME_STATE *,
+                             int (*)(GAME_STATE *, GAME_PIECE *));
 static int spawn_next_piece(GAME_STATE *);
 
 static const RGB piece_colors[] = {
@@ -205,7 +209,11 @@ int main(int argc, char * argv[])
                     redraw = 0;
                     render_graphics(&S);
                 } else if(source == S.logic_timer) {
-                    process_logic(&S);
+                    if(!process_logic(&S)) {
+                        S.status = 1;
+                        goto exit;
+                    }
+
                     redraw = 1;
                 }
                 break;
@@ -233,7 +241,7 @@ static void apply_gravity(GAME_STATE * S) {
         list = list->next;
     }
 
-    resolve_movements(S);
+    resolve_movements(S, handle_landing);
 }
 
 static int create_block(ALLEGRO_BITMAP ** sprite, ALLEGRO_COLOR fill) {
@@ -458,11 +466,17 @@ static GAME_BOARD * game_board_spawn(GAME_STATE * S) {
     return game_board;
 }
 
+static int handle_landing(GAME_STATE * S, GAME_PIECE * piece) {
+    if(piece == S->current_piece) {
+        S->respawn = 1;
+    }
+
+    return 0;
+}
+
 static int initialize(GAME_STATE * S)
 {
     memset(S, 0, sizeof(GAME_STATE));
-
-    S->quit = 0;
 
     ALLEGRO_BITMAP ** sprite = NULL;
     ALLEGRO_DISPLAY ** display = &S->display;
@@ -600,8 +614,18 @@ static GAME_PIECE * piece_spawn(GAME_STATE * S, GAME_PIECE_TYPE type) {
     return piece;
 }
 
-static void process_logic(GAME_STATE * S) {
+static int process_logic(GAME_STATE * S) {
     apply_gravity(S);
+
+    if(S->respawn) {
+        S->respawn = 0;
+
+        if(!spawn_next_piece(S)) {
+            return 0;
+        }
+    }
+
+    return 1;
 }
 
 static void render_graphics(GAME_STATE * S) {
@@ -612,7 +636,8 @@ static void render_graphics(GAME_STATE * S) {
     al_flip_display();
 }
 
-static void resolve_movement(GAME_STATE * S, GAME_PIECE * piece) {
+static void resolve_movement(GAME_STATE * S, GAME_PIECE * piece,
+                             int (*handler)(GAME_STATE *, GAME_PIECE *)) {
     GAME_BOARD * game_board = S->game_board;
     LINKED_LIST * list = S->pieces;
     POINT p1 = piece->next_position;
@@ -634,6 +659,10 @@ static void resolve_movement(GAME_STATE * S, GAME_PIECE * piece) {
         list = list->next;
     }
 
+    if(collision && handler != NULL) {
+        collision = !handler(S, piece);
+    }
+
     if(!collision) {
         piece->position = piece->next_position;
     }
@@ -641,13 +670,15 @@ static void resolve_movement(GAME_STATE * S, GAME_PIECE * piece) {
     piece->moving = 0;
 }
 
-static void resolve_movements(GAME_STATE * S) {
+static void resolve_movements(GAME_STATE * S,
+                              int (*handler)(GAME_STATE *,
+                                             GAME_PIECE *)) {
     LINKED_LIST * list = S->pieces;
 
     while(list != NULL) {
         GAME_PIECE * piece = list->data;
 
-        resolve_movement(S, piece);
+        resolve_movement(S, piece, handler);
 
         list = list->next;
     }
