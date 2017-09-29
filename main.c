@@ -167,6 +167,10 @@ static const char * const piece_tiles[] = {
     "\0\1\1"
 };
 
+static const char type_names[] = {
+    'I','J','L','O', 'S','T','Z'
+};
+
 int main(int argc, char * argv[])
 {
     int redraw = 1;
@@ -734,10 +738,6 @@ static int process_logic(GAME_STATE * S) {
 
     while(list != NULL) {
         GAME_PIECE * piece = list->data;
-
-        char type_names[] = {
-            'I','J','L','O', 'S','T','Z'
-        };
 
         char * map = "<error>";
         int mapb = map_to_string(piece->tiles->map, &map, piece->tiles->size.w * piece->tiles->size.h);
