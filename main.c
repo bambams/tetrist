@@ -193,6 +193,7 @@ static const char type_names[] = {
 
 int main(int argc, char * argv[])
 {
+    int down = 0;
     int redraw = 1;
     GAME_STATE S;
 
@@ -228,19 +229,22 @@ int main(int argc, char * argv[])
                 S.quit = 1;
                 break;
             case ALLEGRO_EVENT_KEY_DOWN:
+            case ALLEGRO_EVENT_KEY_UP:
+                down = ev.type == ALLEGRO_EVENT_KEY_DOWN;
+
                 switch(ev.keyboard.keycode) {
                     case ALLEGRO_KEY_ESCAPE:
                     case ALLEGRO_KEY_Q:
                         S.quit = 1;
                         break;
                     case ALLEGRO_KEY_H:
-                        S.player.move_left = 1;
+                        S.player.move_left = down;
                         break;
                     case ALLEGRO_KEY_J:
-                        S.player.move_down = 1;
+                        S.player.move_down = down;
                         break;
                     case ALLEGRO_KEY_L:
-                        S.player.move_right = 1;
+                        S.player.move_right = down;
                         break;
                 }
                 break;
@@ -946,10 +950,6 @@ static void render_graphics(GAME_STATE * S) {
 }
 
 static void reset_movement(GAME_STATE * S) {
-    S->player.move_down = 0;
-    S->player.move_left = 0;
-    S->player.move_right = 0;
-
     LINKED_LIST * list = S->pieces;
 
     while(list != NULL) {
