@@ -79,8 +79,10 @@ typedef struct {
 } PLAYER;
 
 typedef struct {
+    int down;
     int game_over;
     int quit;
+    int redraw;
     int respawn;
     int status;
 
@@ -193,8 +195,6 @@ static const char type_names[] = {
 
 int main(int argc, char * argv[])
 {
-    int down = 0;
-    int redraw = 1;
     GAME_STATE S;
 
     S.status = initialize(&S);
@@ -230,7 +230,7 @@ int main(int argc, char * argv[])
                 break;
             case ALLEGRO_EVENT_KEY_DOWN:
             case ALLEGRO_EVENT_KEY_UP:
-                down = ev.type == ALLEGRO_EVENT_KEY_DOWN;
+                S.down = ev.type == ALLEGRO_EVENT_KEY_DOWN;
 
                 switch(ev.keyboard.keycode) {
                     case ALLEGRO_KEY_ESCAPE:
@@ -238,26 +238,26 @@ int main(int argc, char * argv[])
                         S.quit = 1;
                         break;
                     case ALLEGRO_KEY_H:
-                        S.player.move_left = down;
+                        S.player.move_left = S.down;
                         break;
                     case ALLEGRO_KEY_J:
-                        S.player.move_down = down;
+                        S.player.move_down = S.down;
                         break;
                     case ALLEGRO_KEY_L:
-                        S.player.move_right = down;
+                        S.player.move_right = S.down;
                         break;
                 }
                 break;
             case ALLEGRO_EVENT_TIMER:
                 source = ev.timer.source;
 
-                if(source == S.gfx_timer && redraw) {
-                    redraw = 0;
+                if(source == S.gfx_timer && S.redraw) {
+                    S.redraw = 0;
                     render_graphics(&S);
                 } else if(source == S.logic_timer) {
                     process_logic(&S);
 
-                    redraw = 1;
+                    S.redraw = 1;
                 }
                 break;
         }
@@ -691,6 +691,8 @@ static GAME_BOARD * game_board_spawn(GAME_STATE * S) {
 static int initialize(GAME_STATE * S)
 {
     memset(S, 0, sizeof(GAME_STATE));
+
+    S->redraw = 1;
 
     ALLEGRO_BITMAP ** sprite = NULL;
     ALLEGRO_DISPLAY ** display = &S->display;
