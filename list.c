@@ -59,33 +59,20 @@ int list_add(LINKED_LIST ** plist, void * data) {
     }
 }
 
-int list_remove(LINKED_LIST ** plist, LINKED_LIST * element) {
-    LINKED_LIST * list = *plist;
-
-    if(list == NULL) {
-        return 0;
-    }
-
-    while(1) {
-        LINKED_LIST ** pnext = &list->next;
-
-        if(*pnext == NULL) {
+int list_remove(LINKED_LIST ** list, void * target) {
+    do {
+        if(*list == NULL) {
             return 0;
         }
 
-        if(*pnext == element) {
-            *pnext = NULL;
-
-            pnext = &element->next;
-
-            if(*pnext != NULL) {
-                list->next = *pnext;
-            }
+        if((*list)->data == target) {
+            *list = (*list)->next;
 
             return 1;
-
         }
 
-        list = *pnext;
-    }
+        list = &(*list)->next;
+    }while(1);
+
+    return 0;
 }
