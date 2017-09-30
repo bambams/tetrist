@@ -39,6 +39,11 @@ typedef enum {
     NUM_PIECES
 } GAME_PIECE_TYPE;
 
+typedef enum {
+    HORIZONTAL = 1,
+    VERTICAL = 2
+} INPUT_DIRECTION;
+
 typedef struct {
     ALLEGRO_BITMAP * sprite;
     POINT spawn;
@@ -94,7 +99,7 @@ typedef struct {
     } sprites;
 } GAME_STATE;
 
-static void apply_input(GAME_STATE *);
+static void apply_input(GAME_STATE *, INPUT_DIRECTION);
 static void apply_gravity(GAME_STATE *);
 static void apply_movements(GAME_STATE *);
 static void collision_destroy(COLLISION **);
@@ -260,23 +265,30 @@ exit:
     return S.status;
 }
 
-static void apply_input(GAME_STATE * S) {
+static void apply_input(GAME_STATE * S, INPUT_DIRECTION direction) {
     GAME_PIECE * current_piece = S->current_piece;
     POINT * next = &current_piece->next_position;
     PLAYER * player = &S->player;
 
-    fprintf(stderr, "Applying input: %s%s%s\n", player->move_down ? "J" : "", player->move_left ? "H" : "", player->move_right ? "L" : "");
+    int horizontal = direction & HORIZONTAL;
+    int vertical = direction & VERTICAL;
 
-    if(player->move_down) {
-        next->y += 1;
+    fprintf(stderr, "Applying input: %s%s%s\n", vertical && player->move_down ? "J" : "", horizontal && player->move_left ? "H" : "", horizontal && player->move_right ? "L" : "");
+
+    if(horizontal) {
+        if(player->move_left) {
+            next->x -= 1;
+        }
+
+        if(player->move_right) {
+            next->x += 1;
+        }
     }
 
-    if(player->move_left) {
-        next->x -= 1;
-    }
-
-    if(player->move_right) {
-        next->x += 1;
+    if(vertical) {
+        if(player->move_down) {
+            next->y += 1;
+        }
     }
 }
 
@@ -902,8 +914,11 @@ static void print_frame_diagnostics(GAME_STATE * S) {
 }
 
 static int process_logic(GAME_STATE * S) {
-    apply_input(S);
+    apply_input(S, VERTICAL);
     apply_gravity(S);
+    apply_movements(S);
+
+    apply_input(S, HORIZONTAL);
     apply_movements(S);
 
     if(S->respawn) {
