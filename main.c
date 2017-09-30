@@ -67,6 +67,12 @@ typedef struct {
 } COLLISION;
 
 typedef struct {
+    int move_down;
+    int move_left;
+    int move_right;
+} PLAYER;
+
+typedef struct {
     int game_over;
     int quit;
     int respawn;
@@ -79,6 +85,7 @@ typedef struct {
     GAME_BOARD * game_board;
     GAME_PIECE * current_piece;
     LINKED_LIST * pieces;
+    PLAYER player;
 
     struct {
         ALLEGRO_BITMAP * game_board;
@@ -86,6 +93,7 @@ typedef struct {
     } sprites;
 } GAME_STATE;
 
+static void apply_input(GAME_STATE *);
 static void apply_gravity(GAME_STATE *);
 static void apply_movements(GAME_STATE *);
 static void collision_destroy(COLLISION **);
@@ -112,7 +120,7 @@ static GAME_PIECE * piece_spawn(GAME_STATE *, GAME_PIECE_TYPE);
 static void print_collision(COLLISION *);
 static int process_logic(GAME_STATE *);
 static void render_graphics(GAME_STATE *);
-static void reset_movement(LINKED_LIST *);
+static void reset_movement(GAME_STATE *);
 static int spawn_next_piece(GAME_STATE *);
 
 static const RGB piece_colors[] = {
@@ -218,6 +226,15 @@ int main(int argc, char * argv[])
                     case ALLEGRO_KEY_Q:
                         S.quit = 1;
                         break;
+                    case ALLEGRO_KEY_H:
+                        S.player.move_left = 1;
+                        break;
+                    case ALLEGRO_KEY_J:
+                        S.player.move_down = 1;
+                        break;
+                    case ALLEGRO_KEY_L:
+                        S.player.move_right = 1;
+                        break;
                 }
                 break;
             case ALLEGRO_EVENT_TIMER:
@@ -239,6 +256,26 @@ exit:
     S.status = deinitialize(&S);
 
     return S.status;
+}
+
+static void apply_input(GAME_STATE * S) {
+    GAME_PIECE * current_piece = S->current_piece;
+    POINT * next = &current_piece->next_position;
+    PLAYER * player = &S->player;
+
+    fprintf(stderr, "Applying input: %s%s%s\n", player->move_down ? "J" : "", player->move_left ? "H" : "", player->move_right ? "L" : "");
+
+    if(player->move_down) {
+        next->y += 1;
+    }
+
+    if(player->move_left) {
+        next->x -= 1;
+    }
+
+    if(player->move_right) {
+        next->x += 1;
+    }
 }
 
 static void apply_gravity(GAME_STATE * S) {
@@ -831,6 +868,7 @@ static void print_collision(COLLISION * collision) {
 }
 
 static int process_logic(GAME_STATE * S) {
+    apply_input(S);
     apply_gravity(S);
     apply_movements(S);
 
@@ -874,7 +912,13 @@ static void render_graphics(GAME_STATE * S) {
     al_flip_display();
 }
 
-static void reset_movement(LINKED_LIST * list) {
+static void reset_movement(GAME_STATE * S) {
+    S->player.move_down = 0;
+    S->player.move_left = 0;
+    S->player.move_right = 0;
+
+    LINKED_LIST * list = S->pieces;
+
     while(list != NULL) {
         GAME_PIECE * piece = list->data;
 
