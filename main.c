@@ -41,6 +41,7 @@ typedef enum {
 
 typedef struct {
     ALLEGRO_BITMAP * sprite;
+    POINT position;
     POINT spawn;
     SIZE bitmap_size;
     SIZE tile_size;
@@ -56,6 +57,11 @@ typedef struct {
     POINT position;
     TILE_MAP * tiles;
 } GAME_PIECE;
+
+typedef enum {
+    HORIZONTAL,
+    VERTICAL
+} INPUT_DIRECTION;
 
 typedef struct {
     int game_board_collision;
@@ -93,7 +99,7 @@ typedef struct {
     } sprites;
 } GAME_STATE;
 
-static void apply_input(GAME_STATE *);
+static void apply_input(GAME_STATE *, INPUT_DIRECTION);
 static void apply_gravity(GAME_STATE *);
 static void apply_movements(GAME_STATE *);
 static void collision_destroy(COLLISION **);
@@ -259,7 +265,7 @@ exit:
     return S.status;
 }
 
-static void apply_input(GAME_STATE * S) {
+static void apply_input(GAME_STATE * S, INPUT_DIRECTION direction) {
     GAME_PIECE * current_piece = S->current_piece;
     POINT * next = &current_piece->next_position;
     PLAYER * player = &S->player;
@@ -385,8 +391,8 @@ static int create_block_shaded(ALLEGRO_BITMAP ** sprite,
 }
 
 static int create_game_board(GAME_STATE * S) {
-    int w = al_get_display_width(S->display);
-    int h = al_get_display_height(S->display);
+    int w = 480;//al_get_display_width(S->display);
+    int h = 640;//al_get_display_height(S->display);
     int tw = w / TILE_SIZE;
     int th = h / TILE_SIZE;
     ALLEGRO_BITMAP ** sprite = &S->sprites.game_board;
@@ -407,7 +413,7 @@ static int create_game_board(GAME_STATE * S) {
 
     for(int y=0; y<th; y++) {
         for(int x=0; x<tw; x++) {
-            if(x == 0 || x == tw - 1 || y == 0 || y == th - 1) {
+            if(x <= 2 || x >= tw - 1 - 2 || y <= 2 || y >= th - 1 - 2) {
                 al_draw_bitmap(block, x * TILE_SIZE, y * TILE_SIZE, 0);
             }
         }
@@ -526,7 +532,7 @@ static int detect_collisions(GAME_STATE * S, GAME_PIECE * piece,
     GAME_PIECE * current_piece = S->current_piece;
     LINKED_LIST * list = S->pieces;
     POINT p1 = piece->next_position;
-    POINT p2 = {0,0};
+    POINT p2 = game_board->position;
     TILE_MAP * t1 = piece->tiles;
     TILE_MAP * t2 = game_board->tiles;
     POINT spot;
@@ -629,9 +635,9 @@ static GAME_BOARD * game_board_spawn(GAME_STATE * S) {
 
     memset(game_board, 0, sizeof(GAME_BOARD));
 
-    int w = al_get_display_width(S->display);
+    int w = 480;//al_get_display_width(S->display);
     int wt = w / TILE_SIZE;
-    int h = al_get_display_height(S->display);
+    int h = 640;//al_get_display_height(S->display);
     int ht = h / TILE_SIZE;
     ALLEGRO_BITMAP * sprite = S->sprites.game_board;
     POINT * spawn = &game_board->spawn;
@@ -647,7 +653,7 @@ static GAME_BOARD * game_board_spawn(GAME_STATE * S) {
 
     for(int y=0; y<ht; y++) {
         for(int x=0; x<wt; x++) {
-            if(x == 0 || x == wt - 1 || y == 0 || y == ht - 1) {
+            if(x <= 2 || x >= wt - 1 - 2 || y <= 2 || y >= ht - 1 - 2) {
                 tile_map_set(*tiles, x, y, 1);
             }
         }
@@ -655,11 +661,12 @@ static GAME_BOARD * game_board_spawn(GAME_STATE * S) {
 
     bitmap_size->w = w;
     bitmap_size->h = h;
-    spawn->x = wt / 2;
-    spawn->y = 0;
+    spawn->x = 3 + wt / 2;
+    spawn->y = 3 + 4;
     tile_size->w = wt;
     tile_size->h = ht;
-
+    game_board->position.x = _XT(3);
+    game_board->position.y = _XT(3);
     game_board->sprite = sprite;
 
     return game_board;
@@ -683,7 +690,7 @@ static int initialize(GAME_STATE * S)
         return 2;
     }
 
-    *display = al_create_display(480, 640);
+    *display = al_create_display(768, 1024);
 
     if(*display == NULL) {
         return 3;
@@ -893,8 +900,11 @@ static void print_frame_diagnostics(GAME_STATE * S) {
 }
 
 static int process_logic(GAME_STATE * S) {
-    apply_input(S);
+    apply_input(S, VERTICAL);
     apply_gravity(S);
+    apply_movements(S);
+
+    apply_input(S, HORIZONTAL);
     apply_movements(S);
 
     if(S->respawn) {
@@ -916,7 +926,7 @@ static int process_logic(GAME_STATE * S) {
 static void render_graphics(GAME_STATE * S) {
     al_set_target_bitmap(al_get_backbuffer(S->display));
     al_clear_to_color(white);
-    al_draw_bitmap(S->game_board->sprite, 0, 0, 0);
+    al_draw_bitmap(S->game_board->sprite, S->game_board->position.x, S->game_board->position.y, 0);
     draw_pieces(&S->pieces);
     al_flip_display();
 }
