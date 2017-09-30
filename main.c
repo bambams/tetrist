@@ -1,6 +1,7 @@
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_native_dialog.h>
 #include <allegro5/allegro_primitives.h>
+#include <float.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -15,9 +16,8 @@
 #define magicpink (al_map_rgb(255, 0, 255))
 #define white (al_map_rgb(255, 255, 255))
 
-const int GFX_FPS = 10;
 const int GRAVITY = 1;
-const int LOGIC_FPS = 1;
+const int LOGIC_FPS = 5;
 const int TILE_SIZE = 40;
 
 #define _XT(x) (x * TILE_SIZE)
@@ -39,6 +39,11 @@ typedef enum {
     NUM_PIECES
 } GAME_PIECE_TYPE;
 
+typedef enum {
+    HORIZONTAL = 1,
+    VERTICAL = 2
+} INPUT_DIRECTION;
+
 typedef struct {
     ALLEGRO_BITMAP * sprite;
     POINT spawn;
@@ -58,6 +63,7 @@ typedef struct {
 } GAME_PIECE;
 
 typedef struct {
+    char tile;
     int game_board_collision;
     int player_fail;
     GAME_PIECE * piece;
@@ -67,18 +73,27 @@ typedef struct {
 } COLLISION;
 
 typedef struct {
+    int move_down;
+    int move_left;
+    int move_right;
+} PLAYER;
+
+typedef struct {
+    int down;
     int game_over;
     int quit;
+    int redraw;
     int respawn;
     int status;
+    int ticks;
 
     ALLEGRO_DISPLAY * display;
     ALLEGRO_EVENT_QUEUE * events;
-    ALLEGRO_TIMER * gfx_timer;
-    ALLEGRO_TIMER * logic_timer;
+    ALLEGRO_TIMER * timer;
     GAME_BOARD * game_board;
     GAME_PIECE * current_piece;
     LINKED_LIST * pieces;
+    PLAYER player;
 
     struct {
         ALLEGRO_BITMAP * game_board;
@@ -86,11 +101,12 @@ typedef struct {
     } sprites;
 } GAME_STATE;
 
+static void apply_input(GAME_STATE *, INPUT_DIRECTION);
 static void apply_gravity(GAME_STATE *);
 static void apply_movements(GAME_STATE *);
 static void collision_destroy(COLLISION **);
 static COLLISION * collision_spawn(GAME_PIECE *, POINT *, POINT *,
-                                   TILE_MAP *, int, int);
+                                   TILE_MAP *, char, int, int);
 static int create_block(ALLEGRO_BITMAP **, ALLEGRO_COLOR);
 static int create_block_shaded(ALLEGRO_BITMAP **, ALLEGRO_COLOR,
                         ALLEGRO_COLOR, ALLEGRO_COLOR);
@@ -110,8 +126,10 @@ static GAME_PIECE_TYPE next_piece_type(GAME_STATE *);
 static void piece_destroy(GAME_PIECE **);
 static GAME_PIECE * piece_spawn(GAME_STATE *, GAME_PIECE_TYPE);
 static void print_collision(COLLISION *);
+static void print_frame_diagnostics(GAME_STATE *);
 static int process_logic(GAME_STATE *);
 static void render_graphics(GAME_STATE *);
+static void reset_movement(GAME_STATE *);
 static int spawn_next_piece(GAME_STATE *);
 
 static const RGB piece_colors[] = {
@@ -150,25 +168,25 @@ static const SIZE piece_sizes[] = {
 
 static const char * const piece_tiles[] = {
     // I
-    "\1\1\1\1",
+    "xxxx",
     // J
-    "\1\1\1"
-    "\0\0\1",
+    "xxx"
+    "\0\0x",
     // L
-    "\1\1\1"
-    "\1\0\0",
+    "xxx"
+    "x\0\0",
     // O
-    "\1\1"
-    "\1\1",
+    "xx"
+    "xx",
     // S
-    "\0\1\1"
-    "\1\1\0",
+    "\0xx"
+    "xx\0",
     // T
-    "\1\1\1"
-    "\0\1\0",
+    "xxx"
+    "\0x\0",
     // Z
-    "\1\1\0"
-    "\0\1\1"
+    "xx\0"
+    "\0xx"
 };
 
 static const char type_names[] = {
@@ -177,7 +195,6 @@ static const char type_names[] = {
 
 int main(int argc, char * argv[])
 {
-    int redraw = 1;
     GAME_STATE S;
 
     S.status = initialize(&S);
@@ -196,15 +213,12 @@ int main(int argc, char * argv[])
         goto exit;
     }
 
-    al_start_timer(S.gfx_timer);
-    al_start_timer(S.logic_timer);
+    al_start_timer(S.timer);
 
     while(!S.quit) {
         ALLEGRO_EVENT ev;
 
         al_wait_for_event(S.events, &ev);
-
-        ALLEGRO_TIMER * source = NULL;
 
         switch(ev.type)
         {
@@ -212,24 +226,32 @@ int main(int argc, char * argv[])
                 S.quit = 1;
                 break;
             case ALLEGRO_EVENT_KEY_DOWN:
+            case ALLEGRO_EVENT_KEY_UP:
+                S.down = ev.type == ALLEGRO_EVENT_KEY_DOWN;
+
                 switch(ev.keyboard.keycode) {
                     case ALLEGRO_KEY_ESCAPE:
                     case ALLEGRO_KEY_Q:
                         S.quit = 1;
                         break;
+                    case ALLEGRO_KEY_H:
+                        S.player.move_left = S.down;
+                        break;
+                    case ALLEGRO_KEY_J:
+                        S.player.move_down = S.down;
+                        break;
+                    case ALLEGRO_KEY_L:
+                        S.player.move_right = S.down;
+                        break;
                 }
                 break;
             case ALLEGRO_EVENT_TIMER:
-                source = ev.timer.source;
+                process_logic(&S);
 
-                if(source == S.gfx_timer && redraw) {
-                    redraw = 0;
+                if(S.redraw) {
                     render_graphics(&S);
-                } else if(source == S.logic_timer) {
-                    process_logic(&S);
-
-                    redraw = 1;
                 }
+
                 break;
         }
     }
@@ -240,17 +262,46 @@ exit:
     return S.status;
 }
 
+static void apply_input(GAME_STATE * S, INPUT_DIRECTION direction) {
+    GAME_PIECE * current_piece = S->current_piece;
+    POINT * next = &current_piece->next_position;
+    PLAYER * player = &S->player;
+
+    if(current_piece->noclip) {
+        return;
+    }
+
+    int horizontal = direction & HORIZONTAL;
+    int vertical = direction & VERTICAL;
+
+    fprintf(stderr, "Applying input: %s%s%s\n", vertical && player->move_down ? "J" : "", horizontal && player->move_left ? "H" : "", horizontal && player->move_right ? "L" : "");
+
+    if(horizontal) {
+        if(player->move_left) {
+            next->x -= 1;
+        }
+
+        if(player->move_right) {
+            next->x += 1;
+        }
+    }
+
+    if(vertical) {
+        if(player->move_down) {
+            next->y += 1;
+        }
+    }
+}
+
 static void apply_gravity(GAME_STATE * S) {
     LINKED_LIST * list = S->pieces;
 
     while(list != NULL) {
         GAME_PIECE * piece = list->data;
-        POINT next = piece->position;
+        POINT * next = &piece->next_position;
 
-        next.y += GRAVITY;
-
+        next->y += GRAVITY;
         piece->moving = 1;
-        piece->next_position = next;
 
         list = list->next;
     }
@@ -267,11 +318,13 @@ static void apply_movements(GAME_STATE * S) {
 
         if(detect_collisions(S, piece, &collisions)) {
             while(collisions != NULL) {
-                void * collision = collisions->data;
+                COLLISION * collision = collisions->data;
 
                 print_collision(collision);
 
-                if(piece == current_piece) {
+                char tile = collision->tile;
+
+                if(piece == current_piece && tile == 'x') {
                     S->respawn = 1;
                 }
 
@@ -287,6 +340,8 @@ static void apply_movements(GAME_STATE * S) {
             piece->noclip = 0;
             piece->position = piece->next_position;
             piece->moving = 0;
+
+            S->redraw = 1;
         }
 
         list = list->next;
@@ -308,6 +363,7 @@ static COLLISION * collision_spawn(GAME_PIECE * piece,
                                     POINT * origin,
                                     POINT * spot,
                                     TILE_MAP * tiles,
+                                    char tile,
                                     int game_board_collision,
                                     int player_fail) {
     COLLISION * collision = malloc(sizeof(COLLISION));
@@ -321,6 +377,7 @@ static COLLISION * collision_spawn(GAME_PIECE * piece,
     collision->piece = piece;
     collision->player_fail = player_fail;
     collision->spot = *spot;
+    collision->tile = tile;
     collision->tiles = tiles;
 
     return collision;
@@ -440,8 +497,7 @@ static int deinitialize(GAME_STATE * S)
     ALLEGRO_BITMAP ** sprite = NULL;
     ALLEGRO_DISPLAY ** display = &S->display;
     ALLEGRO_EVENT_QUEUE ** events = &S->events;
-    ALLEGRO_TIMER ** gfx_timer = &S->gfx_timer;
-    ALLEGRO_TIMER ** logic_timer = &S->logic_timer;
+    ALLEGRO_TIMER ** timer = &S->timer;
     GAME_BOARD ** game_board = &S->game_board;
     LINKED_LIST ** pieces = &S->pieces;
 
@@ -462,14 +518,9 @@ static int deinitialize(GAME_STATE * S)
         *events = NULL;
     }
 
-    if(*gfx_timer) {
-        al_destroy_timer(*gfx_timer);
-        *gfx_timer = NULL;
-    }
-
-    if(*logic_timer) {
-        al_destroy_timer(*logic_timer);
-        *logic_timer = NULL;
+    if(*timer) {
+        al_destroy_timer(*timer);
+        *timer = NULL;
     }
 
     if(*display) {
@@ -493,7 +544,7 @@ static int detect_collisions(GAME_STATE * S, GAME_PIECE * piece,
     TILE_MAP * t1 = piece->tiles;
     TILE_MAP * t2 = game_board->tiles;
     POINT spot;
-    int detected = collision_detected(p1, t1, p2, t2, &spot);
+    char detected = collision_detected(p1, t1, p2, t2, &spot);
     int * noclip = &piece->noclip;
 
     if(detected) {
@@ -502,7 +553,8 @@ static int detect_collisions(GAME_STATE * S, GAME_PIECE * piece,
                     "Ignoring collision with game board because the "
                     "piece is noclipped.\n");
         } else {
-            collision = collision_spawn(piece, &p2, &spot, t2, 1,
+            collision = collision_spawn(piece, &p2, &spot, t2,
+                                        detected, 1,
                                         current_piece == piece);
 
             if(collision == NULL) {
@@ -526,7 +578,8 @@ static int detect_collisions(GAME_STATE * S, GAME_PIECE * piece,
             detected = collision_detected(p1, t1, p2, t2, &spot);
 
             if(detected) {
-                collision = collision_spawn(piece, &p2, &spot, t2, 1,
+                collision = collision_spawn(piece, &p2, &spot, t2,
+                                            detected, 0,
                                             current_piece == piece);
 
                 if(collision == NULL) {
@@ -611,7 +664,7 @@ static GAME_BOARD * game_board_spawn(GAME_STATE * S) {
     for(int y=0; y<ht; y++) {
         for(int x=0; x<wt; x++) {
             if(x == 0 || x == wt - 1 || y == 0 || y == ht - 1) {
-                tile_map_set(*tiles, x, y, 1);
+                tile_map_set(*tiles, x, y, y == ht - 1 ? 'x' : 'w');
             }
         }
     }
@@ -632,11 +685,12 @@ static int initialize(GAME_STATE * S)
 {
     memset(S, 0, sizeof(GAME_STATE));
 
+    S->redraw = 1;
+
     ALLEGRO_BITMAP ** sprite = NULL;
     ALLEGRO_DISPLAY ** display = &S->display;
     ALLEGRO_EVENT_QUEUE ** events = &S->events;
-    ALLEGRO_TIMER ** gfx_timer = &S->gfx_timer;
-    ALLEGRO_TIMER ** logic_timer = &S->logic_timer;
+    ALLEGRO_TIMER ** timer = &S->timer;
 
     if(!al_init()) {
         return 1;
@@ -652,16 +706,10 @@ static int initialize(GAME_STATE * S)
         return 3;
     }
 
-    *gfx_timer = al_create_timer(1.0/GFX_FPS);
+    *timer = al_create_timer(1.0/LOGIC_FPS);
 
-    if(*gfx_timer == NULL) {
+    if(*timer == NULL) {
         return 4;
-    }
-
-    *logic_timer = al_create_timer(1.0/LOGIC_FPS);
-
-    if(*logic_timer == NULL) {
-        return 5;
     }
 
     *events = al_create_event_queue();
@@ -672,8 +720,7 @@ static int initialize(GAME_STATE * S)
 
     al_register_event_source(*events, al_get_display_event_source(*display));
     al_register_event_source(*events, al_get_keyboard_event_source());
-    al_register_event_source(*events, al_get_timer_event_source(*gfx_timer));
-    al_register_event_source(*events, al_get_timer_event_source(*logic_timer));
+    al_register_event_source(*events, al_get_timer_event_source(*timer));
 
     if(!al_init_primitives_addon()) {
         return 7;
@@ -716,7 +763,9 @@ static int map_to_string(char * src, char ** dest, int len) {
     }
 
     for(int i=0; i<len; i++) {
-        (*dest)[i] = '0' + src[i];
+        char c = src[i];
+
+        (*dest)[i] = c == '\0' ? '0' : c;
     }
 
     (*dest)[len] = '\0';
@@ -831,8 +880,38 @@ static void print_collision(COLLISION * collision) {
     if(map2b) free(map2);
 }
 
+static void print_frame_diagnostics(GAME_STATE * S) {
+    LINKED_LIST * list = S->pieces;
+
+    fprintf(stderr, "FRAME RESULT: pieces:");
+
+    while(list != NULL) {
+        GAME_PIECE * piece = list->data;
+
+        char * map = "<error>";
+        int mapb = map_to_string(piece->tiles->map, &map, piece->tiles->size.w * piece->tiles->size.h);
+
+        fprintf(stderr, " '(%c (%d %d))",
+                         type_names[piece->type],
+                         piece->position.x,
+                         piece->position.y);
+
+        if(mapb) free(map);
+
+        list = list->next;
+    }
+
+    fputc('\n', stderr);
+}
+
 static int process_logic(GAME_STATE * S) {
+    S->ticks++;
+
+    apply_input(S, VERTICAL);
     apply_gravity(S);
+    apply_movements(S);
+
+    apply_input(S, HORIZONTAL);
     apply_movements(S);
 
     if(S->respawn) {
@@ -843,33 +922,33 @@ static int process_logic(GAME_STATE * S) {
         }
     }
 
-    /******** HACKS: Remove me.*/
-    LINKED_LIST * list = S->pieces;
+    print_frame_diagnostics(S);
 
-    while(list != NULL) {
-        GAME_PIECE * piece = list->data;
-
-        char * map = "<error>";
-        int mapb = map_to_string(piece->tiles->map, &map, piece->tiles->size.w * piece->tiles->size.h);
-
-        fprintf(stderr, "#'<piece#%p>(:moving %d :noclip %d :sprite %p :type %c :next_position (:x %d :y %d) :position (:x %d :y %d) :tiles #'<tile_map#%p>(:size (:w %d :h %d) :map \"%s\"))\n",
-                         piece,piece->moving,piece->noclip,piece->sprite,type_names[piece->type],piece->next_position.x,piece->next_position.y,piece->position.x,piece->position.y,piece->tiles,piece->tiles->size.w,piece->tiles->size.h,map);
-
-        if(mapb) free(map);
-
-        list = list->next;
-    }
-    /**************************/
+    // Reset movement for next frame.
+    reset_movement(S);
 
     return 1;
 }
 
 static void render_graphics(GAME_STATE * S) {
+    S->redraw = 0;
     al_set_target_bitmap(al_get_backbuffer(S->display));
     al_clear_to_color(white);
     al_draw_bitmap(S->game_board->sprite, 0, 0, 0);
     draw_pieces(&S->pieces);
     al_flip_display();
+}
+
+static void reset_movement(GAME_STATE * S) {
+    LINKED_LIST * list = S->pieces;
+
+    while(list != NULL) {
+        GAME_PIECE * piece = list->data;
+
+        piece->next_position = piece->position;
+
+        list = list->next;
+    }
 }
 
 static int spawn_next_piece(GAME_STATE * S) {
