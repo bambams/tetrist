@@ -58,6 +58,15 @@ typedef struct {
 } GAME_PIECE;
 
 typedef struct {
+    int game_board_collision;
+    int player_fail;
+    GAME_PIECE * piece;
+    POINT origin;
+    POINT spot;
+    TILE_MAP * tiles;
+} COLLISION;
+
+typedef struct {
     int quit;
     int respawn;
     int status;
@@ -77,6 +86,10 @@ typedef struct {
 } GAME_STATE;
 
 static void apply_gravity(GAME_STATE *);
+static void apply_movements(GAME_STATE *);
+static void collision_destroy(COLLISION **);
+static COLLISION * collision_spawn(GAME_PIECE *, POINT *, POINT *,
+                                   TILE_MAP *, int, int);
 static int create_block(ALLEGRO_BITMAP **, ALLEGRO_COLOR);
 static int create_block_shaded(ALLEGRO_BITMAP **, ALLEGRO_COLOR,
                         ALLEGRO_COLOR, ALLEGRO_COLOR);
@@ -84,30 +97,20 @@ static int create_game_board(GAME_STATE *);
 static int create_piece_sprite(ALLEGRO_BITMAP **, GAME_PIECE_TYPE);
 static int create_sprite(ALLEGRO_BITMAP **, int, int);
 static int deinitialize(GAME_STATE *);
+static int detect_collisions(GAME_STATE *, GAME_PIECE *, LINKED_LIST **);
 static void draw_block(ALLEGRO_BITMAP *, int, int);
 static void draw_pieces(LINKED_LIST **);
 static void game_board_destroy(GAME_BOARD **);
 static GAME_BOARD * game_board_spawn(GAME_STATE *);
-static int handle_landing(GAME_STATE *, GAME_PIECE *,
-                          int, int,
-                          POINT *, TILE_MAP *, POINT *);
 static int initialize(GAME_STATE *);
 static int initialize_game_board(GAME_STATE *);
 static int map_to_string(char *, char **, int);
 static GAME_PIECE_TYPE next_piece_type(GAME_STATE *);
 static void piece_destroy(GAME_PIECE **);
 static GAME_PIECE * piece_spawn(GAME_STATE *, GAME_PIECE_TYPE);
-void print_collision(GAME_PIECE *, POINT *, TILE_MAP *, POINT *, int);
+static void print_collision(COLLISION *);
 static int process_logic(GAME_STATE *);
 static void render_graphics(GAME_STATE *);
-static void resolve_movement(GAME_STATE *, GAME_PIECE *,
-                             int (*)(GAME_STATE *, GAME_PIECE *,
-                                     int, int,
-                                     POINT *, TILE_MAP *, POINT *));
-static void resolve_movements(GAME_STATE *,
-                             int (*)(GAME_STATE *, GAME_PIECE *,
-                                     int, int,
-                                     POINT *, TILE_MAP *, POINT *));
 static int spawn_next_piece(GAME_STATE *);
 
 static const RGB piece_colors[] = {
@@ -253,8 +256,76 @@ static void apply_gravity(GAME_STATE * S) {
 
         list = list->next;
     }
+}
 
-    resolve_movements(S, handle_landing);
+static void apply_movements(GAME_STATE * S) {
+    GAME_PIECE * current_piece = S->current_piece;
+    LINKED_LIST * list = S->pieces;
+
+    while(list != NULL) {
+        GAME_PIECE * piece = list->data;
+
+        LINKED_LIST * collisions = NULL;
+
+        if(detect_collisions(S, piece, &collisions)) {
+            while(collisions != NULL) {
+                void * collision = collisions->data;
+
+                print_collision(collision);
+
+                if(piece == current_piece) {
+                    S->respawn = 1;
+                }
+
+                collisions = collisions->next;
+            }
+        } else {
+            fprintf(stderr,
+                    "No collision detected. "
+                    "Applying movement from (%d,%d) to (%d,%d).\n",
+                    piece->position.x, piece->position.y,
+                    piece->next_position.x, piece->next_position.y);
+
+            piece->noclip = 0;
+            piece->position = piece->next_position;
+            piece->moving = 0;
+        }
+
+        list = list->next;
+    }
+}
+
+static void collision_destroy(COLLISION ** collision) {
+    assert(collision);
+
+    if(*collision == NULL) {
+        return;
+    }
+
+    free(*collision);
+    *collision = NULL;
+}
+
+static COLLISION * collision_spawn(GAME_PIECE * piece,
+                                    POINT * origin,
+                                    POINT * spot,
+                                    TILE_MAP * tiles,
+                                    int game_board_collision,
+                                    int player_fail) {
+    COLLISION * collision = malloc(sizeof(COLLISION));
+
+    if(collision == NULL) {
+        return NULL;
+    }
+
+    collision->game_board_collision = 1;
+    collision->origin = *origin;
+    collision->piece = piece;
+    collision->player_fail = player_fail;
+    collision->spot = *spot;
+    collision->tiles = tiles;
+
+    return collision;
 }
 
 static int create_block(ALLEGRO_BITMAP ** sprite, ALLEGRO_COLOR fill) {
@@ -411,6 +482,76 @@ static int deinitialize(GAME_STATE * S)
     return S->status;
 }
 
+static int detect_collisions(GAME_STATE * S, GAME_PIECE * piece,
+                             LINKED_LIST ** collisions) {
+    assert(*collisions == NULL);
+
+    COLLISION * collision = NULL;
+    GAME_BOARD * game_board = S->game_board;
+    GAME_PIECE * current_piece = S->current_piece;
+    LINKED_LIST * list = S->pieces;
+    POINT p1 = piece->next_position;
+    POINT p2 = {0,0};
+    TILE_MAP * t1 = piece->tiles;
+    TILE_MAP * t2 = game_board->tiles;
+    POINT spot;
+    int detected = collision_detected(p1, t1, p2, t2, &spot);
+    int * noclip = &piece->noclip;
+
+    if(detected) {
+        if(*noclip) {
+            fprintf(stderr,
+                    "Ignoring collision with game board because the "
+                    "piece is noclipped.\n");
+        } else {
+            collision = collision_spawn(piece, &p2, &spot, t2, 1,
+                                        current_piece == piece);
+
+            if(collision == NULL) {
+                return 0;
+            }
+
+            if(!list_add(collisions, collision)) {
+                collision_destroy(&collision);
+                return 0;
+            }
+	     }
+    }
+
+    while(list != NULL) {
+        GAME_PIECE * other_piece = list->data;
+
+        if(piece != other_piece) {
+            p2 = other_piece->position;
+            t2 = other_piece->tiles;
+
+            detected = collision_detected(p1, t1, p2, t2, &spot);
+
+            if(detected) {
+                collision = collision_spawn(piece, &p2, &spot, t2, 1,
+                                            current_piece == piece);
+
+                if(collision == NULL) {
+                    list_destroy(collisions,
+                                 (void (*)(void **))collision_destroy);
+                    return 0;
+                }
+
+                if(!list_add(collisions, collision)) {
+                    collision_destroy(&collision);
+                    list_destroy(collisions,
+                                 (void (*)(void **))collision_destroy);
+                    return 0;
+                }
+            }
+        }
+
+        list = list->next;
+    }
+
+    return *collisions != NULL;
+}
+
 static void draw_block(ALLEGRO_BITMAP * block, int x, int y) {
     al_draw_bitmap(block, _XT(x), _XT(y), 0);
 }
@@ -487,40 +628,6 @@ static GAME_BOARD * game_board_spawn(GAME_STATE * S) {
     game_board->sprite = sprite;
 
     return game_board;
-}
-
-static int handle_landing(GAME_STATE * S,
-                          GAME_PIECE * piece,
-                          int collision,
-                          int game_board_collision,
-                          POINT * p2,
-                          TILE_MAP * t2,
-                          POINT * spot) {
-    GAME_PIECE * current_piece = S->current_piece;
-    int * noclip = &piece->noclip;
-
-    if(collision) {
-        int player_fail = piece == current_piece &&
-                !(game_board_collision && *noclip);
-
-        print_collision(piece, p2, t2, spot, player_fail);
-
-        if(player_fail) {
-            S->respawn = 1;
-        }
-    } else if(piece == current_piece && *noclip) {
-        fprintf(stderr,
-                "Current piece (0x%p) is no longer colliding. "
-                "No clipping is now off.\n",
-                piece);
-        *noclip = 0;
-    } else {
-        fprintf(stderr,
-                "Piece (0x%p) is no longer colliding.\n",
-                piece);
-    }
-
-    return *noclip ? 0 : collision;
 }
 
 static int initialize(GAME_STATE * S)
@@ -688,10 +795,13 @@ static GAME_PIECE * piece_spawn(GAME_STATE * S, GAME_PIECE_TYPE type) {
     return piece;
 }
 
-void print_collision(GAME_PIECE * piece,
-                     POINT * p2, TILE_MAP * t2,
-                     POINT * spot,
-                     int player_fail) {
+static void print_collision(COLLISION * collision) {
+    int game_board_collision = collision->game_board_collision;
+    int player_fail = collision->player_fail;
+    GAME_PIECE * piece = collision->piece;
+    POINT * p2 = &collision->origin;
+    TILE_MAP * t2 = collision->tiles;
+    POINT * spot = &collision->spot;
     POINT * p1 = &piece->next_position;
     TILE_MAP * t1 = piece->tiles;
     SIZE s1 = t1->size;
@@ -704,12 +814,13 @@ void print_collision(GAME_PIECE * piece,
     int map2b = map_to_string(t2->map, &map2, len2);
 
     fprintf(stderr,
-            "Piece (0x%p) is colliding at (%d,%d). "
+            "Piece (0x%p) is colliding at (%d,%d) with %s. "
             "Piece is at (%d,%d) with tile map \"%s\" "
             "and colliding piece is at (%d,%d) with tile map "
             "\"%s\". %s\n",
             piece,
             spot->x, spot->y,
+            game_board_collision ? "the game board" : "another piece",
             p1->x, p1->y,
             map1,
             p2->x, p2->y,
@@ -724,6 +835,7 @@ void print_collision(GAME_PIECE * piece,
 
 static int process_logic(GAME_STATE * S) {
     apply_gravity(S);
+    apply_movements(S);
 
     if(S->respawn) {
         S->respawn = 0;
@@ -760,71 +872,6 @@ static void render_graphics(GAME_STATE * S) {
     al_draw_bitmap(S->game_board->sprite, 0, 0, 0);
     draw_pieces(&S->pieces);
     al_flip_display();
-}
-
-static void resolve_movement(GAME_STATE * S, GAME_PIECE * piece,
-                             int (*handler)(GAME_STATE *,
-                                            GAME_PIECE *,
-                                            int, int,
-                                            POINT *,
-                                            TILE_MAP *,
-                                            POINT *)) {
-    GAME_BOARD * game_board = S->game_board;
-    LINKED_LIST * list = S->pieces;
-    POINT p1 = piece->next_position;
-    POINT p2 = {0,0};
-    TILE_MAP * t1 = piece->tiles;
-    TILE_MAP * t2 = game_board->tiles;
-    POINT spot;
-    int collision = collision_detected(p1, t1, p2, t2, &spot);
-    int game_board_collision = collision;
-
-    while(!collision && list != NULL) {
-        GAME_PIECE * other_piece = list->data;
-
-        if(piece != other_piece) {
-            p2 = other_piece->position;
-            t2 = other_piece->tiles;
-
-            collision = collision_detected(p1, t1, p2, t2, &spot);
-        }
-
-        list = list->next;
-    }
-
-    if(handler != NULL) {
-        collision = handler(S, piece,
-                            collision,
-                            game_board_collision,
-                            &p2, t2, &spot);
-    }
-
-    if(!collision) {
-        fprintf(stderr, "Piece %p is not colliding. Previous position was (%d,%d) and new position is (%d,%d)\n",
-                         piece, piece->position.x, piece->position.y, piece->next_position.x, piece->next_position.y);
-
-        piece->position = piece->next_position;
-    }
-
-    piece->moving = 0;
-}
-
-static void resolve_movements(GAME_STATE * S,
-                              int (*handler)(GAME_STATE *,
-                                             GAME_PIECE *,
-                                             int, int,
-                                             POINT *,
-                                             TILE_MAP *,
-                                             POINT *)) {
-    LINKED_LIST * list = S->pieces;
-
-    while(list != NULL) {
-        GAME_PIECE * piece = list->data;
-
-        resolve_movement(S, piece, handler);
-
-        list = list->next;
-    }
 }
 
 static int spawn_next_piece(GAME_STATE * S) {
