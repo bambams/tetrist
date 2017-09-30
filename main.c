@@ -58,6 +58,7 @@ typedef struct {
 } GAME_PIECE;
 
 typedef struct {
+    char tile;
     int game_board_collision;
     int player_fail;
     GAME_PIECE * piece;
@@ -98,7 +99,7 @@ static void apply_gravity(GAME_STATE *);
 static void apply_movements(GAME_STATE *);
 static void collision_destroy(COLLISION **);
 static COLLISION * collision_spawn(GAME_PIECE *, POINT *, POINT *,
-                                   TILE_MAP *, int, int);
+                                   TILE_MAP *, char, int, int);
 static int create_block(ALLEGRO_BITMAP **, ALLEGRO_COLOR);
 static int create_block_shaded(ALLEGRO_BITMAP **, ALLEGRO_COLOR,
                         ALLEGRO_COLOR, ALLEGRO_COLOR);
@@ -160,25 +161,25 @@ static const SIZE piece_sizes[] = {
 
 static const char * const piece_tiles[] = {
     // I
-    "\1\1\1\1",
+    "xxxx",
     // J
-    "\1\1\1"
-    "\0\0\1",
+    "xxx"
+    "\0\0x",
     // L
-    "\1\1\1"
-    "\1\0\0",
+    "xxx"
+    "x\0\0",
     // O
-    "\1\1"
-    "\1\1",
+    "xx"
+    "xx",
     // S
-    "\0\1\1"
-    "\1\1\0",
+    "\0xx"
+    "xx\0",
     // T
-    "\1\1\1"
-    "\0\1\0",
+    "xxx"
+    "\0x\0",
     // Z
-    "\1\1\0"
-    "\0\1\1"
+    "xx\0"
+    "\0xx"
 };
 
 static const char type_names[] = {
@@ -304,11 +305,13 @@ static void apply_movements(GAME_STATE * S) {
 
         if(detect_collisions(S, piece, &collisions)) {
             while(collisions != NULL) {
-                void * collision = collisions->data;
+                COLLISION * collision = collisions->data;
 
                 print_collision(collision);
 
-                if(piece == current_piece) {
+                char tile = collision->tile;
+
+                if(piece == current_piece && tile == 'x') {
                     S->respawn = 1;
                 }
 
@@ -345,6 +348,7 @@ static COLLISION * collision_spawn(GAME_PIECE * piece,
                                     POINT * origin,
                                     POINT * spot,
                                     TILE_MAP * tiles,
+                                    char tile,
                                     int game_board_collision,
                                     int player_fail) {
     COLLISION * collision = malloc(sizeof(COLLISION));
@@ -358,6 +362,7 @@ static COLLISION * collision_spawn(GAME_PIECE * piece,
     collision->piece = piece;
     collision->player_fail = player_fail;
     collision->spot = *spot;
+    collision->tile = tile;
     collision->tiles = tiles;
 
     return collision;
@@ -530,7 +535,7 @@ static int detect_collisions(GAME_STATE * S, GAME_PIECE * piece,
     TILE_MAP * t1 = piece->tiles;
     TILE_MAP * t2 = game_board->tiles;
     POINT spot;
-    int detected = collision_detected(p1, t1, p2, t2, &spot);
+    char detected = collision_detected(p1, t1, p2, t2, &spot);
     int * noclip = &piece->noclip;
 
     if(detected) {
@@ -539,7 +544,8 @@ static int detect_collisions(GAME_STATE * S, GAME_PIECE * piece,
                     "Ignoring collision with game board because the "
                     "piece is noclipped.\n");
         } else {
-            collision = collision_spawn(piece, &p2, &spot, t2, 1,
+            collision = collision_spawn(piece, &p2, &spot, t2,
+                                        detected, 1,
                                         current_piece == piece);
 
             if(collision == NULL) {
@@ -563,7 +569,8 @@ static int detect_collisions(GAME_STATE * S, GAME_PIECE * piece,
             detected = collision_detected(p1, t1, p2, t2, &spot);
 
             if(detected) {
-                collision = collision_spawn(piece, &p2, &spot, t2, 1,
+                collision = collision_spawn(piece, &p2, &spot, t2,
+                                            detected, 0,
                                             current_piece == piece);
 
                 if(collision == NULL) {
@@ -648,7 +655,7 @@ static GAME_BOARD * game_board_spawn(GAME_STATE * S) {
     for(int y=0; y<ht; y++) {
         for(int x=0; x<wt; x++) {
             if(x == 0 || x == wt - 1 || y == 0 || y == ht - 1) {
-                tile_map_set(*tiles, x, y, 1);
+                tile_map_set(*tiles, x, y, y == ht - 1 ? 'x' : 'w');
             }
         }
     }
@@ -753,7 +760,9 @@ static int map_to_string(char * src, char ** dest, int len) {
     }
 
     for(int i=0; i<len; i++) {
-        (*dest)[i] = '0' + src[i];
+        char c = src[i];
+
+        (*dest)[i] = c == '\0' ? '0' : c;
     }
 
     (*dest)[len] = '\0';

@@ -1,6 +1,6 @@
 #include "misc.h"
 
-int collision_detected(POINT p1, TILE_MAP * t1,
+char collision_detected(POINT p1, TILE_MAP * t1,
                        POINT p2, TILE_MAP * t2,
                        POINT * spot) {
     SIZE s1 = t1->size;
@@ -29,7 +29,7 @@ int collision_detected(POINT p1, TILE_MAP * t1,
                 spot->x = bx;
                 spot->y = by;
 
-                return 1;
+                return c2;
             }
         }
     }
