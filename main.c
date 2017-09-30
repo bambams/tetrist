@@ -67,6 +67,7 @@ typedef struct {
 } COLLISION;
 
 typedef struct {
+    int game_over;
     int quit;
     int respawn;
     int status;
@@ -225,10 +226,7 @@ int main(int argc, char * argv[])
                     redraw = 0;
                     render_graphics(&S);
                 } else if(source == S.logic_timer) {
-                    if(!process_logic(&S)) {
-                        S.status = 1;
-                        goto exit;
-                    }
+                    process_logic(&S);
 
                     redraw = 1;
                 }
@@ -877,6 +875,15 @@ static void render_graphics(GAME_STATE * S) {
 static int spawn_next_piece(GAME_STATE * S) {
     GAME_PIECE_TYPE type = next_piece_type(S);
     GAME_PIECE * piece = piece_spawn(S, type);
+    LINKED_LIST * collisions = NULL;
+
+    piece->next_position = piece->position;
+
+    if (detect_collisions(S, piece, &collisions)) {
+        list_remove(&S->pieces, piece);
+        piece_destroy(&piece);
+        S->game_over = 1;
+    }
 
     return piece != NULL;
 }
