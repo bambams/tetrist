@@ -1,6 +1,7 @@
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_native_dialog.h>
 #include <allegro5/allegro_primitives.h>
+#include <float.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -15,9 +16,8 @@
 #define magicpink (al_map_rgb(255, 0, 255))
 #define white (al_map_rgb(255, 255, 255))
 
-const int GFX_FPS = 10;
 const int GRAVITY = 1;
-const int LOGIC_FPS = 1;
+const int LOGIC_FPS = 5;
 const int TILE_SIZE = 40;
 
 #define _XT(x) (x * TILE_SIZE)
@@ -85,11 +85,11 @@ typedef struct {
     int redraw;
     int respawn;
     int status;
+    int ticks;
 
     ALLEGRO_DISPLAY * display;
     ALLEGRO_EVENT_QUEUE * events;
-    ALLEGRO_TIMER * gfx_timer;
-    ALLEGRO_TIMER * logic_timer;
+    ALLEGRO_TIMER * timer;
     GAME_BOARD * game_board;
     GAME_PIECE * current_piece;
     LINKED_LIST * pieces;
@@ -213,15 +213,12 @@ int main(int argc, char * argv[])
         goto exit;
     }
 
-    al_start_timer(S.gfx_timer);
-    al_start_timer(S.logic_timer);
+    al_start_timer(S.timer);
 
     while(!S.quit) {
         ALLEGRO_EVENT ev;
 
         al_wait_for_event(S.events, &ev);
-
-        ALLEGRO_TIMER * source = NULL;
 
         switch(ev.type)
         {
@@ -249,16 +246,12 @@ int main(int argc, char * argv[])
                 }
                 break;
             case ALLEGRO_EVENT_TIMER:
-                source = ev.timer.source;
+                process_logic(&S);
 
-                if(source == S.gfx_timer && S.redraw) {
-                    S.redraw = 0;
+                if(S.redraw) {
                     render_graphics(&S);
-                } else if(source == S.logic_timer) {
-                    process_logic(&S);
-
-                    S.redraw = 1;
                 }
+
                 break;
         }
     }
@@ -347,6 +340,8 @@ static void apply_movements(GAME_STATE * S) {
             piece->noclip = 0;
             piece->position = piece->next_position;
             piece->moving = 0;
+
+            S->redraw = 1;
         }
 
         list = list->next;
@@ -502,8 +497,7 @@ static int deinitialize(GAME_STATE * S)
     ALLEGRO_BITMAP ** sprite = NULL;
     ALLEGRO_DISPLAY ** display = &S->display;
     ALLEGRO_EVENT_QUEUE ** events = &S->events;
-    ALLEGRO_TIMER ** gfx_timer = &S->gfx_timer;
-    ALLEGRO_TIMER ** logic_timer = &S->logic_timer;
+    ALLEGRO_TIMER ** timer = &S->timer;
     GAME_BOARD ** game_board = &S->game_board;
     LINKED_LIST ** pieces = &S->pieces;
 
@@ -524,14 +518,9 @@ static int deinitialize(GAME_STATE * S)
         *events = NULL;
     }
 
-    if(*gfx_timer) {
-        al_destroy_timer(*gfx_timer);
-        *gfx_timer = NULL;
-    }
-
-    if(*logic_timer) {
-        al_destroy_timer(*logic_timer);
-        *logic_timer = NULL;
+    if(*timer) {
+        al_destroy_timer(*timer);
+        *timer = NULL;
     }
 
     if(*display) {
@@ -701,8 +690,7 @@ static int initialize(GAME_STATE * S)
     ALLEGRO_BITMAP ** sprite = NULL;
     ALLEGRO_DISPLAY ** display = &S->display;
     ALLEGRO_EVENT_QUEUE ** events = &S->events;
-    ALLEGRO_TIMER ** gfx_timer = &S->gfx_timer;
-    ALLEGRO_TIMER ** logic_timer = &S->logic_timer;
+    ALLEGRO_TIMER ** timer = &S->timer;
 
     if(!al_init()) {
         return 1;
@@ -718,16 +706,10 @@ static int initialize(GAME_STATE * S)
         return 3;
     }
 
-    *gfx_timer = al_create_timer(1.0/GFX_FPS);
+    *timer = al_create_timer(1.0/LOGIC_FPS);
 
-    if(*gfx_timer == NULL) {
+    if(*timer == NULL) {
         return 4;
-    }
-
-    *logic_timer = al_create_timer(1.0/LOGIC_FPS);
-
-    if(*logic_timer == NULL) {
-        return 5;
     }
 
     *events = al_create_event_queue();
@@ -738,8 +720,7 @@ static int initialize(GAME_STATE * S)
 
     al_register_event_source(*events, al_get_display_event_source(*display));
     al_register_event_source(*events, al_get_keyboard_event_source());
-    al_register_event_source(*events, al_get_timer_event_source(*gfx_timer));
-    al_register_event_source(*events, al_get_timer_event_source(*logic_timer));
+    al_register_event_source(*events, al_get_timer_event_source(*timer));
 
     if(!al_init_primitives_addon()) {
         return 7;
@@ -924,6 +905,8 @@ static void print_frame_diagnostics(GAME_STATE * S) {
 }
 
 static int process_logic(GAME_STATE * S) {
+    S->ticks++;
+
     apply_input(S, VERTICAL);
     apply_gravity(S);
     apply_movements(S);
@@ -948,6 +931,7 @@ static int process_logic(GAME_STATE * S) {
 }
 
 static void render_graphics(GAME_STATE * S) {
+    S->redraw = 0;
     al_set_target_bitmap(al_get_backbuffer(S->display));
     al_clear_to_color(white);
     al_draw_bitmap(S->game_board->sprite, 0, 0, 0);
