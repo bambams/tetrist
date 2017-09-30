@@ -52,6 +52,7 @@ typedef enum {
 
 typedef struct {
     ALLEGRO_BITMAP * sprite;
+    POINT position;
     POINT spawn;
     SIZE bitmap_size;
     SIZE tile_size;
@@ -67,6 +68,11 @@ typedef struct {
     POINT position;
     TILE_MAP * tiles;
 } GAME_PIECE;
+
+typedef enum {
+    HORIZONTAL,
+    VERTICAL
+} INPUT_DIRECTION;
 
 typedef struct {
     char tile;
@@ -438,8 +444,8 @@ static int create_block_shaded(ALLEGRO_BITMAP ** sprite,
 }
 
 static int create_game_board(GAME_STATE * S) {
-    int w = al_get_display_width(S->display);
-    int h = al_get_display_height(S->display);
+    int w = 480;//al_get_display_width(S->display);
+    int h = 640;//al_get_display_height(S->display);
     int tw = w / TILE_SIZE;
     int th = h / TILE_SIZE;
     ALLEGRO_BITMAP ** sprite = &S->sprites.game_board;
@@ -461,7 +467,7 @@ static int create_game_board(GAME_STATE * S) {
 
     for(y=0; y<th; y++) {
         for(x=0; x<tw; x++) {
-            if(x == 0 || x == tw - 1 || y == 0 || y == th - 1) {
+            if(x <= 2 || x >= tw - 1 - 2 || y <= 2 || y >= th - 1 - 2) {
                 al_draw_bitmap(block, x * TILE_SIZE, y * TILE_SIZE, 0);
             }
         }
@@ -581,7 +587,7 @@ static int detect_collisions(GAME_STATE * S, GAME_PIECE * piece,
     GAME_PIECE * current_piece = S->current_piece;
     LINKED_LIST * list = S->pieces;
     POINT p1 = piece->next_position;
-    POINT p2 = {0,0};
+    POINT p2 = game_board->position;
     TILE_MAP * t1 = piece->tiles;
     TILE_MAP * t2 = game_board->tiles;
     POINT spot;
@@ -705,9 +711,9 @@ static GAME_BOARD * game_board_spawn(GAME_STATE * S) {
 
     memset(game_board, 0, sizeof(GAME_BOARD));
 
-    int w = al_get_display_width(S->display);
+    int w = 480;//al_get_display_width(S->display);
     int wt = w / TILE_SIZE;
-    int h = al_get_display_height(S->display);
+    int h = 640;//al_get_display_height(S->display);
     int ht = h / TILE_SIZE;
     ALLEGRO_BITMAP * sprite = S->sprites.game_board;
     POINT * spawn = &game_board->spawn;
@@ -727,7 +733,7 @@ static GAME_BOARD * game_board_spawn(GAME_STATE * S) {
 
     for(y=0; y<ht; y++) {
         for(x=0; x<wt; x++) {
-            if(x == 0 || x == wt - 1 || y == 0 || y == ht - 1) {
+            if(x <= 2 || x >= wt - 1 - 2 || y <= 2 || y >= ht - 1 - 2) {
                 tile_map_set(*tiles, x, y, y == ht - 1 ? 'x' : 'w');
             }
         }
@@ -735,11 +741,12 @@ static GAME_BOARD * game_board_spawn(GAME_STATE * S) {
 
     bitmap_size->w = w;
     bitmap_size->h = h;
-    spawn->x = wt / 2;
-    spawn->y = 0;
+    spawn->x = 3 + wt / 2;
+    spawn->y = 3 + 4;
     tile_size->w = wt;
     tile_size->h = ht;
-
+    game_board->position.x = _XT(3);
+    game_board->position.y = _XT(3);
     game_board->sprite = sprite;
 
     return game_board;
@@ -766,7 +773,7 @@ static int initialize(GAME_STATE * S)
         return 2;
     }
 
-    *display = al_create_display(480, 640);
+    *display = al_create_display(768, 1024);
 
     if(*display == NULL) {
         return 3;
@@ -1087,7 +1094,7 @@ static void render_graphics(GAME_STATE * S) {
     S->redraw = 0;
     al_set_target_bitmap(al_get_backbuffer(S->display));
     al_clear_to_color(white);
-    al_draw_bitmap(S->game_board->sprite, 0, 0, 0);
+    al_draw_bitmap(S->game_board->sprite, S->game_board->position.x, S->game_board->position.y, 0);
     draw_pieces(&S->pieces);
 
     if (S->game_over) {
