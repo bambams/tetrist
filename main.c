@@ -783,7 +783,7 @@ static void resolve_movement(GAME_STATE * S, GAME_PIECE * piece,
         GAME_PIECE * other_piece = list->data;
 
         if(piece != other_piece) {
-            p2 = other_piece->next_position;
+            p2 = other_piece->position;
             t2 = other_piece->tiles;
 
             collision = collision_detected(p1, t1, p2, t2, &spot);
