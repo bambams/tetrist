@@ -274,6 +274,10 @@ static void apply_input(GAME_STATE * S, INPUT_DIRECTION direction) {
     POINT * next = &current_piece->next_position;
     PLAYER * player = &S->player;
 
+    if(current_piece->noclip) {
+        return;
+    }
+
     int horizontal = direction & HORIZONTAL;
     int vertical = direction & VERTICAL;
 
