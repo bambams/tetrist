@@ -112,6 +112,7 @@ static GAME_PIECE * piece_spawn(GAME_STATE *, GAME_PIECE_TYPE);
 static void print_collision(COLLISION *);
 static int process_logic(GAME_STATE *);
 static void render_graphics(GAME_STATE *);
+static void reset_movement(LINKED_LIST *);
 static int spawn_next_piece(GAME_STATE *);
 
 static const RGB piece_colors[] = {
@@ -245,12 +246,10 @@ static void apply_gravity(GAME_STATE * S) {
 
     while(list != NULL) {
         GAME_PIECE * piece = list->data;
-        POINT next = piece->position;
+        POINT * next = &piece->next_position;
 
-        next.y += GRAVITY;
-
+        next->y += GRAVITY;
         piece->moving = 1;
-        piece->next_position = next;
 
         list = list->next;
     }
@@ -861,6 +860,9 @@ static int process_logic(GAME_STATE * S) {
     }
     /**************************/
 
+    // Reset movement for next frame.
+    reset_movement(S);
+
     return 1;
 }
 
@@ -870,6 +872,16 @@ static void render_graphics(GAME_STATE * S) {
     al_draw_bitmap(S->game_board->sprite, 0, 0, 0);
     draw_pieces(&S->pieces);
     al_flip_display();
+}
+
+static void reset_movement(LINKED_LIST * list) {
+    while(list != NULL) {
+        GAME_PIECE * piece = list->data;
+
+        piece->next_position = piece->position;
+
+        list = list->next;
+    }
 }
 
 static int spawn_next_piece(GAME_STATE * S) {
