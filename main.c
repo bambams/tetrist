@@ -118,6 +118,7 @@ static GAME_PIECE_TYPE next_piece_type(GAME_STATE *);
 static void piece_destroy(GAME_PIECE **);
 static GAME_PIECE * piece_spawn(GAME_STATE *, GAME_PIECE_TYPE);
 static void print_collision(COLLISION *);
+static void print_frame_diagnostics(GAME_STATE *);
 static int process_logic(GAME_STATE *);
 static void render_graphics(GAME_STATE *);
 static void reset_movement(GAME_STATE *);
@@ -867,6 +868,30 @@ static void print_collision(COLLISION * collision) {
     if(map2b) free(map2);
 }
 
+static void print_frame_diagnostics(GAME_STATE * S) {
+    LINKED_LIST * list = S->pieces;
+
+    fprintf(stderr, "FRAME RESULT: pieces:");
+
+    while(list != NULL) {
+        GAME_PIECE * piece = list->data;
+
+        char * map = "<error>";
+        int mapb = map_to_string(piece->tiles->map, &map, piece->tiles->size.w * piece->tiles->size.h);
+
+        fprintf(stderr, " '(%c (%d %d))",
+                         type_names[piece->type],
+                         piece->position.x,
+                         piece->position.y);
+
+        if(mapb) free(map);
+
+        list = list->next;
+    }
+
+    fputc('\n', stderr);
+}
+
 static int process_logic(GAME_STATE * S) {
     apply_input(S);
     apply_gravity(S);
@@ -880,23 +905,7 @@ static int process_logic(GAME_STATE * S) {
         }
     }
 
-    /******** HACKS: Remove me.*/
-    LINKED_LIST * list = S->pieces;
-
-    while(list != NULL) {
-        GAME_PIECE * piece = list->data;
-
-        char * map = "<error>";
-        int mapb = map_to_string(piece->tiles->map, &map, piece->tiles->size.w * piece->tiles->size.h);
-
-        fprintf(stderr, "#'<piece#%p>(:moving %d :noclip %d :sprite %p :type %c :next_position (:x %d :y %d) :position (:x %d :y %d) :tiles #'<tile_map#%p>(:size (:w %d :h %d) :map \"%s\"))\n",
-                         piece,piece->moving,piece->noclip,piece->sprite,type_names[piece->type],piece->next_position.x,piece->next_position.y,piece->position.x,piece->position.y,piece->tiles,piece->tiles->size.w,piece->tiles->size.h,map);
-
-        if(mapb) free(map);
-
-        list = list->next;
-    }
-    /**************************/
+    print_frame_diagnostics(S);
 
     // Reset movement for next frame.
     reset_movement(S);
