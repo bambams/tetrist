@@ -309,17 +309,16 @@ static void apply_input(GAME_STATE * S, INPUT_DIRECTION direction) {
 }
 
 static void apply_gravity(GAME_STATE * S) {
-    LINKED_LIST * list = S->pieces;
+    GAME_PIECE * current_piece = S->current_piece;
 
-    while(list != NULL) {
-        GAME_PIECE * piece = list->data;
-        POINT * next = &piece->next_position;
-
-        next->y += GRAVITY;
-        piece->moving = 1;
-
-        list = list->next;
+    if(current_piece == NULL) {
+        return;
     }
+
+    POINT * next = &current_piece->next_position;
+
+    next->y += GRAVITY;
+    current_piece->moving = 1;
 }
 
 static void apply_movements(GAME_STATE * S) {
