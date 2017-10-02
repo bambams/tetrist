@@ -410,6 +410,7 @@ static int create_game_board(GAME_STATE * S) {
     int tw = w / TILE_SIZE;
     int th = h / TILE_SIZE;
     ALLEGRO_BITMAP ** sprite = &S->sprites.game_board;
+    int x, y;
 
     if(!create_sprite(sprite, tw, th)) {
         return 0;
@@ -425,8 +426,8 @@ static int create_game_board(GAME_STATE * S) {
 
     al_set_target_bitmap(*sprite);
 
-    for(int y=0; y<th; y++) {
-        for(int x=0; x<tw; x++) {
+    for(y=0; y<th; y++) {
+        for(x=0; x<tw; x++) {
             if(x == 0 || x == tw - 1 || y == 0 || y == th - 1) {
                 al_draw_bitmap(block, x * TILE_SIZE, y * TILE_SIZE, 0);
             }
@@ -446,6 +447,8 @@ static int create_piece_sprite(ALLEGRO_BITMAP ** sprite,
     const SIZE * const size = &piece_sizes[type];
     int w = size->w;
     int h = size->h;
+    int x;
+    int y;
 
     if(!create_sprite(sprite, w, h)) {
         return 0;
@@ -462,8 +465,8 @@ static int create_piece_sprite(ALLEGRO_BITMAP ** sprite,
 
     al_set_target_bitmap(*sprite);
 
-    for(int y=0; y<h; y++) {
-        for(int x=0; x<w; x++) {
+    for(y=0; y<h; y++) {
+        for(x=0; x<w; x++) {
             if(tile_map_get_aux(map, w, x, y)) {
                 draw_block(block, x, y);
             }
@@ -637,6 +640,7 @@ static void game_board_destroy(GAME_BOARD ** game_board) {
 }
 
 static GAME_BOARD * game_board_spawn(GAME_STATE * S) {
+    int x, y;
     GAME_BOARD * game_board = malloc(sizeof(GAME_BOARD));
 
     if(game_board == NULL) {
@@ -661,8 +665,8 @@ static GAME_BOARD * game_board_spawn(GAME_STATE * S) {
         return NULL;
     }
 
-    for(int y=0; y<ht; y++) {
-        for(int x=0; x<wt; x++) {
+    for(y=0; y<ht; y++) {
+        for(x=0; x<wt; x++) {
             if(x == 0 || x == wt - 1 || y == 0 || y == ht - 1) {
                 tile_map_set(*tiles, x, y, y == ht - 1 ? 'x' : 'w');
             }
@@ -691,6 +695,7 @@ static int initialize(GAME_STATE * S)
     ALLEGRO_DISPLAY ** display = &S->display;
     ALLEGRO_EVENT_QUEUE ** events = &S->events;
     ALLEGRO_TIMER ** timer = &S->timer;
+    GAME_PIECE_TYPE i;
 
     if(!al_init()) {
         return 1;
@@ -734,7 +739,7 @@ static int initialize(GAME_STATE * S)
 
     sprite = S->sprites.pieces;
 
-    for(GAME_PIECE_TYPE i=PIECE_I; i<NUM_PIECES; i++) {
+    for(i=PIECE_I; i<NUM_PIECES; i++) {
         if(!create_piece_sprite(&sprite[i], i)) {
             return 9;
         }
@@ -756,14 +761,17 @@ static int initialize_game_board(GAME_STATE * S) {
 }
 
 static int map_to_string(char * src, char ** dest, int len) {
+    char c;
+    int i;
+
     *dest = malloc(len + 1);
 
     if(*dest == NULL) {
         return 0;
     }
 
-    for(int i=0; i<len; i++) {
-        char c = src[i];
+    for(i=0; i<len; i++) {
+        c = src[i];
 
         (*dest)[i] = c == '\0' ? '0' : c;
     }
