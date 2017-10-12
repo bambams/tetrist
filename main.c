@@ -264,8 +264,14 @@ exit:
 
 static void apply_input(GAME_STATE * S, INPUT_DIRECTION direction) {
     GAME_PIECE * current_piece = S->current_piece;
-    POINT * next = &current_piece->next_position;
     PLAYER * player = &S->player;
+    POINT * next = NULL;
+
+    if(current_piece == NULL) {
+        return;
+    }
+
+    next = &current_piece->next_position;
 
     if(current_piece->noclip) {
         return;
@@ -967,6 +973,7 @@ static int spawn_next_piece(GAME_STATE * S) {
     piece->next_position = piece->position;
 
     if (detect_collisions(S, piece, &collisions)) {
+        S->current_piece = NULL;
         list_remove(&S->pieces, piece);
         piece_destroy(&piece);
         S->game_over = 1;
