@@ -60,19 +60,21 @@ int list_add(LINKED_LIST ** plist, void * data) {
 }
 
 int list_remove(LINKED_LIST ** list, void * target) {
-    do {
-        if(*list == NULL) {
-            return 0;
-        }
+    if((*list)->data == target) {
+        *list = (*list)->next;
+        return 1;
+    }
 
-        if((*list)->data == target) {
-            *list = (*list)->next;
+    LINKED_LIST ** node = list;
 
+    while(1) {
+        node = &(*node)->next;
+
+        if((*node)->data == target) {
+            *node = (*node)->next;
             return 1;
         }
-
-        list = &(*list)->next;
-    }while(1);
+    }
 
     return 0;
 }
