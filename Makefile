@@ -9,7 +9,8 @@ endif
 
 EXE = ./game
 LIBS = $$(pkg-config --libs $(ALLEGRO_LIBS))
-OBJECTS = $(shell find -maxdepth 1 -name '*.c' | sed -e 's/^/$(BUILDDIR)\//' -e 's/\.c$$/.o/')
+LIBRARY = $(BUILDDIR)/libtetrist.a
+OBJECTS = $(shell find -maxdepth 1 \( -name '*.c' -a ! -name main.c \) | sed -e 's/^/$(BUILDDIR)\//' -e 's/\.c$$/.o/')
 SHELL = ./build-shell.bash
 
 all: clear $(EXE)
@@ -34,7 +35,10 @@ run: all
 rerun: rebuild
 	$(EXE)
 
-$(EXE): $(OBJECTS)
+$(LIBRARY): $(OBJECTS)
+	ar r $(LIBRARY) $?
+
+$(EXE): $(BUILDDIR)/main.o $(LIBRARY)
 	$(CC) $(CFLAGS) -o $@ $? $(LIBS)
 
 %.o: %.c
