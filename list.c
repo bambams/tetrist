@@ -12,7 +12,7 @@ void list_destroy(LINKED_LIST ** plist, FUNCTION_DESTROY data_free) {
         LINKED_LIST * list = *plist;
         LINKED_LIST * next = list->next;
 
-        if(list->data) {
+        if(data_free != NULL && list->data != NULL) {
             data_free(&list->data);
         }
 
