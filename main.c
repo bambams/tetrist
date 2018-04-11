@@ -621,7 +621,7 @@ static int detect_collisions(GAME_STATE * S, GAME_PIECE * piece,
         list = list->next;
     }
 
-    return *collisions != NULL;
+    return 1;
 }
 
 static void draw_block(ALLEGRO_BITMAP * block, int x, int y) {
