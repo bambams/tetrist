@@ -365,9 +365,17 @@ static void apply_movements(GAME_STATE * S) {
 static void collision_destroy(COLLISION ** collision) {
     assert(collision);
 
+#ifdef DEBUG
+    fprintf(stderr, "%p destroy :t collision\n", *collision);
+#endif
+
     if(*collision == NULL) {
         return;
     }
+
+#ifdef DEBUG
+    fprintf(stderr, "%p free :t collision\n", *collision);
+#endif
 
     free(*collision);
     *collision = NULL;
@@ -385,6 +393,10 @@ static COLLISION * collision_spawn(GAME_PIECE * piece,
     if(collision == NULL) {
         return NULL;
     }
+
+#ifdef DEBUG
+    fprintf(stderr, "%p malloc :t collision\n", collision);
+#endif
 
     collision->game_board_collision = 1;
     collision->origin = *origin;
@@ -652,6 +664,10 @@ static void draw_pieces(LINKED_LIST ** pieces) {
 static void game_board_destroy(GAME_BOARD ** game_board) {
     assert(game_board);
 
+#ifdef DEBUG
+    fprintf(stderr, "%p destroy :t game-board\n", *game_board);
+#endif
+
     if(!*game_board) {
         return;
     }
@@ -659,6 +675,10 @@ static void game_board_destroy(GAME_BOARD ** game_board) {
     TILE_MAP ** tiles = &(*game_board)->tiles;
 
     tile_map_destroy(tiles);
+
+#ifdef DEBUG
+    fprintf(stderr, "%p free :t game-board\n", *game_board);
+#endif
 
     free(*game_board);
     *game_board = NULL;
@@ -671,6 +691,10 @@ static GAME_BOARD * game_board_spawn(GAME_STATE * S) {
     if(game_board == NULL) {
         return NULL;
     }
+
+#ifdef DEBUG
+    fprintf(stderr, "%p malloc :t game-board\n", game_board);
+#endif
 
     memset(game_board, 0, sizeof(GAME_BOARD));
 
@@ -685,6 +709,10 @@ static GAME_BOARD * game_board_spawn(GAME_STATE * S) {
     TILE_MAP ** tiles = &game_board->tiles;
 
     if(!tile_map_create(tiles, wt, ht, NULL)) {
+#ifdef DEBUG
+        fprintf(stderr, "%p free :t game-board\n", game_board);
+#endif
+
         free(game_board);
         game_board = NULL;
         return NULL;
@@ -795,6 +823,10 @@ static int map_to_string(char * src, char ** dest, int len) {
         return 0;
     }
 
+#ifdef DEBUG
+    fprintf(stderr, "%p malloc :t map_string\n", *dest);
+#endif
+
     for(i=0; i<len; i++) {
         c = src[i];
 
@@ -817,6 +849,10 @@ static GAME_PIECE_TYPE next_piece_type(GAME_STATE * S) {
 static void piece_destroy(GAME_PIECE ** piece) {
     assert(piece);
 
+#ifdef DEBUG
+    fprintf(stderr, "%p destroy :t piece\n", *piece);
+#endif
+
     if(!*piece) {
         return;
     }
@@ -824,6 +860,10 @@ static void piece_destroy(GAME_PIECE ** piece) {
     TILE_MAP ** tiles = &(*piece)->tiles;
 
     tile_map_destroy(tiles);
+
+#ifdef DEBUG
+    fprintf(stderr, "%p free :t piece\n", *piece);
+#endif
 
     free(*piece);
     *piece = NULL;
@@ -842,6 +882,10 @@ static GAME_PIECE * piece_spawn(GAME_STATE * S, GAME_PIECE_TYPE type) {
         return NULL;
     }
 
+#ifdef DEBUG
+    fprintf(stderr, "%p malloc :t piece\n", piece);
+#endif
+
     memset(piece, 0, sizeof(GAME_PIECE));
 
     const char * const map = piece_tiles[type];
@@ -849,6 +893,10 @@ static GAME_PIECE * piece_spawn(GAME_STATE * S, GAME_PIECE_TYPE type) {
     TILE_MAP ** tiles = &piece->tiles;
 
     if(!tile_map_create(tiles, size->w, size->h, map)) {
+#ifdef DEBUG
+        fprintf(stderr, "%p free :t piece\n", piece);
+#endif
+
         free(piece);
         piece = NULL;
         return NULL;
@@ -865,6 +913,11 @@ static GAME_PIECE * piece_spawn(GAME_STATE * S, GAME_PIECE_TYPE type) {
 
     if(!list_add(pieces, piece)) {
         tile_map_destroy(tiles);
+
+#ifdef DEBUG
+        fprintf(stderr, "%p free :t piece\n", piece);
+#endif
+
         free(piece);
         piece = NULL;
         return NULL;
@@ -912,8 +965,21 @@ static void print_collision(COLLISION * collision) {
             "Piece stopped.");
 #endif
 
-    if(map1b) free(map1);
-    if(map2b) free(map2);
+    if(map1b) {
+#ifdef DEBUG
+        fprintf(stderr, "%p free :t map-string\n", map1);
+#endif
+
+        free(map1);
+    }
+
+    if(map2b) {
+#ifdef DEBUG
+        fprintf(stderr, "%p free :t map-string\n", map2);
+#endif
+
+        free(map2);
+    }
 }
 
 static void print_frame_diagnostics(GAME_STATE * S) {
@@ -936,7 +1002,13 @@ static void print_frame_diagnostics(GAME_STATE * S) {
                          piece->position.y);
 #endif
 
-        if(mapb) free(map);
+        if(mapb) {
+#ifdef DEBUG
+            fprintf(stderr, "%p free :t map-string\n", map);
+#endif
+
+            free(map);
+        }
 
         list = list->next;
     }

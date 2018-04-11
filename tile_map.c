@@ -15,6 +15,10 @@ int tile_map_create(TILE_MAP ** tiles, int w, int h,
         return 0;
     }
 
+#ifdef DEBUG
+    fprintf(stderr, "%p malloc :t tile-map\n", *tiles);
+#endif
+
     memset(*tiles, 0, sizeof(TILE_MAP));
 
     (*tiles)->size.w = w;
@@ -25,10 +29,18 @@ int tile_map_create(TILE_MAP ** tiles, int w, int h,
     *data = malloc(sizeof(char) * w * h);
 
     if(*data == NULL) {
+#ifdef DEBUG
+        fprintf(stderr, "%p free :t tile-map\n", *tiles);
+#endif
+
         free(*tiles);
         *tiles = NULL;
         return 0;
     }
+
+#ifdef DEBUG
+    fprintf(stderr, "%p malloc :t map-data\n", *data);
+#endif
 
     int len = w * h;
 
@@ -50,8 +62,16 @@ void tile_map_destroy(TILE_MAP ** tiles) {
 
     char ** map = &(*tiles)->map;
 
+#ifdef DEBUG
+    fprintf(stderr, "%p free :t map-data\n", *map);
+#endif
+
     free(*map);
     *map = NULL;
+
+#ifdef DEBUG
+    fprintf(stderr, "%p free :t tile-map\n", *tiles);
+#endif
 
     free(*tiles);
     *tiles = NULL;

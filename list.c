@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "list.h"
@@ -8,6 +9,11 @@ void list_free(LINKED_LIST ** plist) {
 }
 
 void list_destroy(LINKED_LIST ** plist, FUNCTION_DESTROY data_free) {
+#ifdef DEBUG
+    fprintf(stderr, "%p destroy :t list :f '#func<%p>\n",
+                    *plist, data_free);
+#endif
+
     while(*plist) {
         LINKED_LIST * list = *plist;
         LINKED_LIST * next = list->next;
@@ -15,6 +21,10 @@ void list_destroy(LINKED_LIST ** plist, FUNCTION_DESTROY data_free) {
         if(data_free != NULL && list->data != NULL) {
             data_free(&list->data);
         }
+
+#ifdef DEBUG
+        fprintf(stderr, "%p free :t list\n", list);
+#endif
 
         free(list);
         *plist = next;
@@ -27,6 +37,10 @@ LINKED_LIST * list_create_link(void * data) {
     if(list == NULL) {
         return NULL;
     }
+
+#ifdef DEBUG
+    fprintf(stderr, "%p malloc :t list\n", list);
+#endif
 
     memset(list, 0, sizeof(LINKED_LIST));
 
@@ -71,8 +85,18 @@ int list_remove(
         FUNCTION_DESTROY data_free) {
     if((*list)->data == target) {
         if(data_free != NULL && target != NULL) {
+#ifdef DEBUG
+            fprintf(stderr,
+                    "%p free :t dynamic :f #'func<%p>\n",
+                    *list, data_free);
+#endif
+
             data_free(&(*list)->data);
         }
+
+#ifdef DEBUG
+        fprintf(stderr, "%p free :t list\n", *list);
+#endif
 
         free(*list);
         *list = (*list)->next;
@@ -85,6 +109,10 @@ int list_remove(
         node = &(*node)->next;
 
         if((*node)->data == target) {
+#ifdef DEBUG
+            fprintf(stderr, "%p free :t list\n", *node);
+#endif
+
             if(data_free != NULL && target != NULL) {
                 data_free(&(*node)->data);
             }
