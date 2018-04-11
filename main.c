@@ -548,6 +548,8 @@ static int deinitialize(GAME_STATE * S)
         *display = NULL;
     }
 
+    al_uninstall_system();
+
     return S->status;
 }
 
