@@ -322,9 +322,11 @@ static void apply_movements(GAME_STATE * S) {
 
         LINKED_LIST * collisions = NULL;
 
-        if(detect_collisions(S, piece, &collisions)) {
-            while(collisions != NULL) {
-                COLLISION * collision = collisions->data;
+        if(!detect_collisions(S, piece, &collisions) || collisions) {
+            LINKED_LIST * it = collisions;
+
+            while(it != NULL) {
+                COLLISION * collision = it->data;
 
                 print_collision(collision);
 
@@ -334,8 +336,11 @@ static void apply_movements(GAME_STATE * S) {
                     S->respawn = 1;
                 }
 
-                collisions = collisions->next;
+                it = it->next;
             }
+
+            list_destroy(&collisions,
+                         (FUNCTION_DESTROY)collision_destroy);
         } else {
             fprintf(stderr,
                     "No collision detected. "
@@ -439,6 +444,9 @@ static int create_game_board(GAME_STATE * S) {
             }
         }
     }
+
+    al_destroy_bitmap(block);
+    block = NULL;
 
     return 1;
 }
@@ -567,14 +575,18 @@ static int detect_collisions(GAME_STATE * S, GAME_PIECE * piece,
                                         current_piece == piece);
 
             if(collision == NULL) {
+                list_destroy(collisions,
+                             (FUNCTION_DESTROY)collision_destroy);
                 return 0;
             }
 
             if(!list_add(collisions, collision)) {
                 collision_destroy(&collision);
+                list_destroy(collisions,
+                             (FUNCTION_DESTROY)collision_destroy);
                 return 0;
             }
-	     }
+        }
     }
 
     while(list != NULL) {
@@ -972,7 +984,9 @@ static int spawn_next_piece(GAME_STATE * S) {
 
     piece->next_position = piece->position;
 
-    if (detect_collisions(S, piece, &collisions)) {
+    if (!detect_collisions(S, piece, &collisions) || collisions) {
+        list_destroy(&collisions,
+                     (FUNCTION_DESTROY)collision_destroy);
         S->current_piece = NULL;
         list_remove(&S->pieces, piece, (FUNCTION_DESTROY)piece_destroy);
         S->game_over = 1;
