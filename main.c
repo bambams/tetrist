@@ -974,8 +974,7 @@ static int spawn_next_piece(GAME_STATE * S) {
 
     if (detect_collisions(S, piece, &collisions)) {
         S->current_piece = NULL;
-        list_remove(&S->pieces, piece);
-        piece_destroy(&piece);
+        list_remove(&S->pieces, piece, (FUNCTION_DESTROY)piece_destroy);
         S->game_over = 1;
     }
 
