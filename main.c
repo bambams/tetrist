@@ -280,7 +280,9 @@ static void apply_input(GAME_STATE * S, INPUT_DIRECTION direction) {
     int horizontal = direction & HORIZONTAL;
     int vertical = direction & VERTICAL;
 
+#ifdef DEBUG
     fprintf(stderr, "Applying input: %s%s%s\n", vertical && player->move_down ? "J" : "", horizontal && player->move_left ? "H" : "", horizontal && player->move_right ? "L" : "");
+#endif
 
     if(horizontal) {
         if(player->move_left) {
@@ -342,12 +344,13 @@ static void apply_movements(GAME_STATE * S) {
             list_destroy(&collisions,
                          (FUNCTION_DESTROY)collision_destroy);
         } else {
+#ifdef DEBUG
             fprintf(stderr,
                     "No collision detected. "
                     "Applying movement from (%d,%d) to (%d,%d).\n",
                     piece->position.x, piece->position.y,
                     piece->next_position.x, piece->next_position.y);
-
+#endif
             piece->noclip = 0;
             piece->position = piece->next_position;
             piece->moving = 0;
@@ -566,9 +569,11 @@ static int detect_collisions(GAME_STATE * S, GAME_PIECE * piece,
 
     if(detected) {
         if(*noclip) {
+#ifdef DEBUG
             fprintf(stderr,
                     "Ignoring collision with game board because the "
                     "piece is noclipped.\n");
+#endif
         } else {
             collision = collision_spawn(piece, &p2, &spot, t2,
                                         detected, 1,
@@ -869,13 +874,8 @@ static GAME_PIECE * piece_spawn(GAME_STATE * S, GAME_PIECE_TYPE type) {
 }
 
 static void print_collision(COLLISION * collision) {
-    int game_board_collision = collision->game_board_collision;
-    int player_fail = collision->player_fail;
     GAME_PIECE * piece = collision->piece;
-    POINT * p2 = &collision->origin;
     TILE_MAP * t2 = collision->tiles;
-    POINT * spot = &collision->spot;
-    POINT * p1 = &piece->next_position;
     TILE_MAP * t1 = piece->tiles;
     SIZE s1 = t1->size;
     SIZE s2 = t2->size;
@@ -885,6 +885,13 @@ static void print_collision(COLLISION * collision) {
     char * map2 = "<error>";
     int map1b = map_to_string(t1->map, &map1, len1);
     int map2b = map_to_string(t2->map, &map2, len2);
+
+#ifdef DEBUG
+    int game_board_collision = collision->game_board_collision;
+    int player_fail = collision->player_fail;
+    POINT * p2 = &collision->origin;
+    POINT * spot = &collision->spot;
+    POINT * p1 = &piece->next_position;
 
     fprintf(stderr,
             "Piece (0x%p) is colliding at (%d,%d) with %s. "
@@ -901,6 +908,7 @@ static void print_collision(COLLISION * collision) {
             player_fail ?
             "Respawning a new piece." :
             "Piece stopped.");
+#endif
 
     if(map1b) free(map1);
     if(map2b) free(map2);
@@ -909,7 +917,9 @@ static void print_collision(COLLISION * collision) {
 static void print_frame_diagnostics(GAME_STATE * S) {
     LINKED_LIST * list = S->pieces;
 
+#ifdef DEBUG
     fprintf(stderr, "FRAME RESULT: pieces:");
+#endif
 
     while(list != NULL) {
         GAME_PIECE * piece = list->data;
@@ -917,10 +927,12 @@ static void print_frame_diagnostics(GAME_STATE * S) {
         char * map = "<error>";
         int mapb = map_to_string(piece->tiles->map, &map, piece->tiles->size.w * piece->tiles->size.h);
 
+#ifdef DEBUG
         fprintf(stderr, " '(%c (%d %d))",
                          type_names[piece->type],
                          piece->position.x,
                          piece->position.y);
+#endif
 
         if(mapb) free(map);
 
