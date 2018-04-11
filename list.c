@@ -3,13 +3,11 @@
 
 #include "list.h"
 
-void free_nil(void ** data) {}
-
 void list_free(LINKED_LIST ** plist) {
     list_destroy(plist, free_nil);
 }
 
-void list_destroy(LINKED_LIST ** plist, void (*data_free)(void **)) {
+void list_destroy(LINKED_LIST ** plist, FUNCTION_DESTROY data_free) {
     while(*plist) {
         LINKED_LIST * list = *plist;
         LINKED_LIST * next = list->next;

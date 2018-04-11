@@ -510,7 +510,7 @@ static int deinitialize(GAME_STATE * S)
     GAME_BOARD ** game_board = &S->game_board;
     LINKED_LIST ** pieces = &S->pieces;
 
-    list_destroy(pieces, (void (*)(void **))piece_destroy);
+    list_destroy(pieces, (FUNCTION_DESTROY)piece_destroy);
     game_board_destroy(game_board);
 
     sprite = S->sprites.pieces;
@@ -593,14 +593,14 @@ static int detect_collisions(GAME_STATE * S, GAME_PIECE * piece,
 
                 if(collision == NULL) {
                     list_destroy(collisions,
-                                 (void (*)(void **))collision_destroy);
+                                 (FUNCTION_DESTROY)collision_destroy);
                     return 0;
                 }
 
                 if(!list_add(collisions, collision)) {
                     collision_destroy(&collision);
                     list_destroy(collisions,
-                                 (void (*)(void **))collision_destroy);
+                                 (FUNCTION_DESTROY)collision_destroy);
                     return 0;
                 }
             }

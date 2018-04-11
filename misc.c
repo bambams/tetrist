@@ -38,6 +38,8 @@ char collision_detected(POINT p1, TILE_MAP * t1,
     return 0;
 }
 
+void free_nil(void ** data) {}
+
 ALLEGRO_COLOR rgb_to_color(RGB rgb) {
     return al_map_rgb(rgb.r, rgb.g, rgb.b);
 }
