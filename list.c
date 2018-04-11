@@ -59,6 +59,7 @@ int list_add(LINKED_LIST ** plist, void * data) {
 
 int list_remove(LINKED_LIST ** list, void * target) {
     if((*list)->data == target) {
+        free(*list);
         *list = (*list)->next;
         return 1;
     }
@@ -69,6 +70,7 @@ int list_remove(LINKED_LIST ** list, void * target) {
         node = &(*node)->next;
 
         if((*node)->data == target) {
+            free(*node);
             *node = (*node)->next;
             return 1;
         }
