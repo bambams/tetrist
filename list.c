@@ -57,6 +57,14 @@ int list_add(LINKED_LIST ** plist, void * data) {
     }
 }
 
+void list_print(LINKED_LIST * list, LINKED_LIST_PRINT_FUNCTION print) {
+    int i = 0;
+
+    while(list != NULL) {
+        print(i++, list->data);
+    }
+}
+
 int list_remove(
         LINKED_LIST ** list,
         void * target,
