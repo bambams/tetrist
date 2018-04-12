@@ -9,7 +9,7 @@ endif
 
 EXE = ./game
 LIBS = $$(pkg-config --libs $(ALLEGRO_LIBS))
-OBJECTS = $(shell find -name '*.c' | sed -e 's/^/$(BUILDDIR)\//' -e 's/\.c$$/.o/')
+OBJECTS = $(shell find -maxdepth 1 -name '*.c' | sed -e 's/^/$(BUILDDIR)\//' -e 's/\.c$$/.o/')
 SHELL = ./build-shell.bash
 
 all: clear $(EXE)
@@ -22,6 +22,9 @@ clear:
 
 debug:
 	DEBUG=1 $(MAKE) clean all && gdb $(EXE)
+
+memcheck: clean all
+	valgrind --leak-check=full --track-origins=yes $(EXE)
 
 rebuild: clean all
 
