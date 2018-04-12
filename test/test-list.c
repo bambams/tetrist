@@ -101,7 +101,7 @@ int test1(void) {
     assert(list->next->next->data == (void *)3);
     assert(list->next->next->next == NULL);
 
-    if(!list_remove(&list, (void *)2)) {
+    if(!list_remove(&list, (void *)2, (FUNCTION_DESTROY)free_nil)) {
         fprintf(stderr,
                 "test1: Failed to remove the needle from the haystack.\n");
         goto error;
@@ -183,7 +183,7 @@ int test2(void) {
         goto error;
     }
 
-    if(!list_remove(&list, match->data)) {
+    if(!list_remove(&list, match->data, (FUNCTION_DESTROY)free_int)) {
         fprintf(stderr,
                 "test2: Failed to remove the needle from the haystack.\n");
         goto error;

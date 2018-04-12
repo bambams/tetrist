@@ -23,6 +23,9 @@ clear:
 debug:
 	DEBUG=1 $(MAKE) clean all && gdb $(EXE)
 
+memcheck: clean all
+	valgrind --leak-check=full --track-origins=yes $(EXE)
+
 rebuild: clean all
 
 run: all

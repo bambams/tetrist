@@ -7,7 +7,7 @@ ifdef DEBUG
 	CFLAGS += -g
 endif
 
-LIBS = $$(pkg-config --libs $(ALLEGRO_LIBS)) ../$(BUILDDIR)/list.o
+LIBS = ../$(BUILDDIR)/list.o ../$(BUILDDIR)/misc.o ../$(BUILDDIR)/tile_map.o $$(pkg-config --libs $(ALLEGRO_LIBS))
 OBJECTS = $(shell find -maxdepth 1 -name '*.c' | sed -e 's/^/$(BUILDDIR)\//' -e 's/\.c$$/.o/')
 TESTS = $(shell find -maxdepth 1 -name '*.c' | sed -e 's/\.c$$/.test/')
 SHELL = ../build-shell.bash
