@@ -1,10 +1,10 @@
-ALLEGRO_LIBS = allegro-5 allegro_dialog-5 allegro_primitives-5
+ALLEGRO_LIBS = allegro-5 allegro_dialog-5 allegro_font-5 allegro_primitives-5 allegro_ttf-5
 BUILDDIR = .build
 CC = gcc
 CFLAGS = $$(pkg-config --cflags $(ALLEGRO_LIBS)) -Wall
 
 ifdef DEBUG
-	CFLAGS += -g
+	CFLAGS += -DDEBUG -g
 endif
 
 EXE = ./game
