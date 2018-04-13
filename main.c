@@ -756,7 +756,7 @@ static GAME_BOARD * game_board_spawn(GAME_STATE * S) {
     bitmap_size->w = w;
     bitmap_size->h = h;
     spawn->x = wt / 2;
-    spawn->y = 0;
+    spawn->y = -1;
     tile_size->w = wt;
     tile_size->h = ht;
 
