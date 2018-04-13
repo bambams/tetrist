@@ -102,6 +102,9 @@ typedef struct {
     int move_down;
     int move_left;
     int move_right;
+    int release_down;
+    int release_left;
+    int release_right;
 } PLAYER;
 
 typedef struct {
@@ -271,19 +274,31 @@ int main(int argc, char * argv[])
                     case ALLEGRO_KEY_PAD_4:
                     case ALLEGRO_KEY_A:
                     case ALLEGRO_KEY_H:
-                        if(S.down) S.player.move_left = 1;
+                        if(S.down) {
+                            S.player.move_left = 1;
+                        } else {
+                            S.player.release_left = 1;
+                        }
                         break;
                     case ALLEGRO_KEY_DOWN:
                     case ALLEGRO_KEY_PAD_2:
                     case ALLEGRO_KEY_S:
                     case ALLEGRO_KEY_J:
-                        if(S.down) S.player.move_down = 1;
+                        if(S.down) {
+                            S.player.move_down = 1;
+                        } else {
+                            S.player.release_down = 1;
+                        }
                         break;
                     case ALLEGRO_KEY_RIGHT:
                     case ALLEGRO_KEY_PAD_6:
                     case ALLEGRO_KEY_D:
                     case ALLEGRO_KEY_L:
-                        if(S.down) S.player.move_right = 1;
+                        if(S.down) {
+                            S.player.move_right = 1;
+                        } else {
+                            S.player.release_right = 1;
+                        }
                         break;
                 }
                 break;
@@ -322,6 +337,21 @@ static void apply_input(GAME_STATE * S, INPUT_DIRECTION direction) {
     int horizontal = direction & HORIZONTAL;
     int vertical = direction & VERTICAL;
 
+    if(player->release_left) {
+        player->move_left = 0;
+        player->release_left = 0;
+    }
+
+    if(player->release_right) {
+        player->move_right = 0;
+        player->release_right = 0;
+    }
+
+    if(player->release_down) {
+        player->move_down = 0;
+        player->release_down = 0;
+    }
+
 #ifdef DEBUG
     fprintf(stderr, "Applying input: %s%s%s\n", vertical && player->move_down ? "J" : "", horizontal && player->move_left ? "H" : "", horizontal && player->move_right ? "L" : "");
 #endif
@@ -329,19 +359,16 @@ static void apply_input(GAME_STATE * S, INPUT_DIRECTION direction) {
     if(horizontal) {
         if(player->move_left) {
             next->x -= 1;
-            player->move_left = 0;
         }
 
         if(player->move_right) {
             next->x += 1;
-            player->move_right = 0;
         }
     }
 
     if(vertical) {
         if(player->move_down) {
             next->y += 1;
-            player->move_down = 0;
         }
     }
 }
