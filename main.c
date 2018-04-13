@@ -1,4 +1,6 @@
 #include <allegro5/allegro.h>
+#include <allegro5/allegro_font.h>
+#include <allegro5/allegro_ttf.h>
 #include <allegro5/allegro_native_dialog.h>
 #include <allegro5/allegro_primitives.h>
 #include <float.h>
@@ -14,10 +16,13 @@
 #define gray (al_map_rgb(75, 75, 75))
 #define lgray (al_map_rgb(100, 100, 100))
 #define magicpink (al_map_rgb(255, 0, 255))
+#define overlay (al_map_rgba(0, 0, 0, 200))
+#define pink (al_map_rgb(255, 90, 255))
 #define white (al_map_rgb(255, 255, 255))
 
 const int GRAVITY = 1;
 const int LOGIC_FPS = 5;
+const int RESTART_TIMEOUT = 5;
 const int TILE_SIZE = 40;
 
 #define _XT(x) (x * TILE_SIZE)
@@ -27,6 +32,7 @@ const int TILE_SIZE = 40;
 #define _3T (_XT(3))
 #define _4T (_XT(4))
 #define _5T (_XT(5))
+#define ticks_to_seconds(ticks) (ticks / (double)LOGIC_FPS)
 
 typedef enum {
     PIECE_I,
@@ -89,6 +95,7 @@ typedef struct {
 
     ALLEGRO_DISPLAY * display;
     ALLEGRO_EVENT_QUEUE * events;
+    ALLEGRO_FONT * font;
     ALLEGRO_TIMER * timer;
     GAME_BOARD * game_board;
     GAME_PIECE * current_piece;
@@ -747,6 +754,7 @@ static int initialize(GAME_STATE * S)
     ALLEGRO_BITMAP ** sprite = NULL;
     ALLEGRO_DISPLAY ** display = &S->display;
     ALLEGRO_EVENT_QUEUE ** events = &S->events;
+    ALLEGRO_FONT ** font = &S->font;
     ALLEGRO_TIMER ** timer = &S->timer;
     GAME_PIECE_TYPE i;
 
@@ -780,21 +788,35 @@ static int initialize(GAME_STATE * S)
     al_register_event_source(*events, al_get_keyboard_event_source());
     al_register_event_source(*events, al_get_timer_event_source(*timer));
 
-    if(!al_init_primitives_addon()) {
+    if(!al_init_font_addon()) {
         return 7;
+    }
+
+    if(!al_init_ttf_addon()) {
+        return 8;
+    }
+
+    *font = al_load_font("yoster.ttf", -20, 0);
+
+    if(*font == NULL) {
+        return 9;
+    }
+
+    if(!al_init_primitives_addon()) {
+        return 10;
     }
 
     sprite = &S->sprites.game_board;
 
     if(!create_game_board(S)) {
-        return 8;
+        return 11;
     }
 
     sprite = S->sprites.pieces;
 
     for(i=PIECE_I; i<NUM_PIECES; i++) {
         if(!create_piece_sprite(&sprite[i], i)) {
-            return 9;
+            return 12;
         }
     }
 
@@ -1026,6 +1048,25 @@ static int process_logic(GAME_STATE * S) {
     apply_input(S, HORIZONTAL);
     apply_movements(S);
 
+    if(S->game_over)
+    {
+        double diff = ticks_to_seconds(S->ticks) - ticks_to_seconds(S->game_over);
+
+        S->redraw = 1;
+
+#ifdef DEBUG
+        fprintf(stderr,
+                "%lf seconds since game over.. (game_over: %d, ticks: %d)\n",
+                diff, S->game_over, S->ticks);
+#endif
+
+        if(diff >= RESTART_TIMEOUT) {
+            list_destroy(&S->pieces, (FUNCTION_DESTROY)piece_destroy);
+            S->game_over = 0;
+            S->respawn = 1;
+        }
+    }
+
     if(S->respawn) {
         S->respawn = 0;
 
@@ -1048,6 +1089,29 @@ static void render_graphics(GAME_STATE * S) {
     al_clear_to_color(white);
     al_draw_bitmap(S->game_board->sprite, 0, 0, 0);
     draw_pieces(&S->pieces);
+
+    if (S->game_over) {
+        int w = al_get_display_width(S->display);
+        int h = al_get_display_height(S->display);
+        int lh = al_get_font_line_height(S->font);
+
+        al_draw_filled_rectangle(0, 0, w, h, overlay);
+
+        al_draw_text(S->font, pink,
+                w / 2.0, h / 2.0,
+                ALLEGRO_ALIGN_CENTER,
+                "GAME OVER");
+
+        double diff = ticks_to_seconds(S->ticks) - ticks_to_seconds(S->game_over);
+
+        al_draw_textf(S->font, pink,
+                w / 2.0 - 5,
+                h / 2.0 + lh * 2 - 5,
+                ALLEGRO_ALIGN_CENTER,
+                "Restarting in %d seconds...",
+                (int)(RESTART_TIMEOUT - diff));
+    }
+
     al_flip_display();
 }
 
@@ -1075,7 +1139,8 @@ static int spawn_next_piece(GAME_STATE * S) {
                      (FUNCTION_DESTROY)collision_destroy);
         S->current_piece = NULL;
         list_remove(&S->pieces, piece, (FUNCTION_DESTROY)piece_destroy);
-        S->game_over = 1;
+        S->game_over = S->ticks;
+        S->redraw = 1;
     }
 
     return piece != NULL;
