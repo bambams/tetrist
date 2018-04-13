@@ -16,6 +16,7 @@
 #define gray (al_map_rgb(75, 75, 75))
 #define lgray (al_map_rgb(100, 100, 100))
 #define magicpink (al_map_rgb(255, 0, 255))
+#define overlay (al_map_rgba(0, 0, 0, 200))
 #define pink (al_map_rgb(255, 90, 255))
 #define white (al_map_rgb(255, 255, 255))
 
@@ -1093,6 +1094,8 @@ static void render_graphics(GAME_STATE * S) {
         int w = al_get_display_width(S->display);
         int h = al_get_display_height(S->display);
         int lh = al_get_font_line_height(S->font);
+
+        al_draw_filled_rectangle(0, 0, w, h, overlay);
 
         al_draw_text(S->font, pink,
                 w / 2.0, h / 2.0,
