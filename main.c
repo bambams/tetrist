@@ -268,13 +268,13 @@ int main(int argc, char * argv[])
                         S.quit = 1;
                         break;
                     case ALLEGRO_KEY_H:
-                        S.player.move_left = S.down;
+                        if(S.down) S.player.move_left = 1;
                         break;
                     case ALLEGRO_KEY_J:
-                        S.player.move_down = S.down;
+                        if(S.down) S.player.move_down = 1;
                         break;
                     case ALLEGRO_KEY_L:
-                        S.player.move_right = S.down;
+                        if(S.down) S.player.move_right = 1;
                         break;
                 }
                 break;
@@ -320,16 +320,19 @@ static void apply_input(GAME_STATE * S, INPUT_DIRECTION direction) {
     if(horizontal) {
         if(player->move_left) {
             next->x -= 1;
+            player->move_left = 0;
         }
 
         if(player->move_right) {
             next->x += 1;
+            player->move_right = 0;
         }
     }
 
     if(vertical) {
         if(player->move_down) {
             next->y += 1;
+            player->move_down = 0;
         }
     }
 }
