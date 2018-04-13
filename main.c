@@ -23,6 +23,7 @@
 #include <allegro5/allegro_native_dialog.h>
 #include <allegro5/allegro_primitives.h>
 #include <float.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -1128,7 +1129,7 @@ static void render_graphics(GAME_STATE * S) {
                 h / 2.0 + lh * 2 - 5,
                 ALLEGRO_ALIGN_CENTER,
                 "Restarting in %d seconds...",
-                (int)(RESTART_TIMEOUT - diff));
+                (int)ceil(RESTART_TIMEOUT - diff));
     }
 
     al_flip_display();
