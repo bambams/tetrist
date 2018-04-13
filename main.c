@@ -267,12 +267,21 @@ int main(int argc, char * argv[])
                     case ALLEGRO_KEY_Q:
                         S.quit = 1;
                         break;
+                    case ALLEGRO_KEY_LEFT:
+                    case ALLEGRO_KEY_PAD_4:
+                    case ALLEGRO_KEY_A:
                     case ALLEGRO_KEY_H:
                         if(S.down) S.player.move_left = 1;
                         break;
+                    case ALLEGRO_KEY_DOWN:
+                    case ALLEGRO_KEY_PAD_2:
+                    case ALLEGRO_KEY_S:
                     case ALLEGRO_KEY_J:
                         if(S.down) S.player.move_down = 1;
                         break;
+                    case ALLEGRO_KEY_RIGHT:
+                    case ALLEGRO_KEY_PAD_6:
+                    case ALLEGRO_KEY_D:
                     case ALLEGRO_KEY_L:
                         if(S.down) S.player.move_right = 1;
                         break;
