@@ -256,6 +256,12 @@ int main(int argc, char * argv[])
             case ALLEGRO_EVENT_KEY_UP:
                 S.down = ev.type == ALLEGRO_EVENT_KEY_DOWN;
 
+#if DEBUG
+                fprintf(stderr, "KEY %s: %s\n",
+                        S.down ? "DOWN" : "UP",
+                        al_keycode_to_name(ev.keyboard.keycode));
+#endif
+
                 switch(ev.keyboard.keycode) {
                     case ALLEGRO_KEY_ESCAPE:
                     case ALLEGRO_KEY_Q:
