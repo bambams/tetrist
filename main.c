@@ -21,6 +21,7 @@
 
 const int GRAVITY = 1;
 const int LOGIC_FPS = 5;
+const int RESTART_TIMEOUT = 5;
 const int TILE_SIZE = 40;
 
 #define _XT(x) (x * TILE_SIZE)
@@ -1050,11 +1051,19 @@ static int process_logic(GAME_STATE * S) {
     {
         double diff = ticks_to_seconds(S->ticks) - ticks_to_seconds(S->game_over);
 
+        S->redraw = 1;
+
 #ifdef DEBUG
         fprintf(stderr,
                 "%lf seconds since game over.. (game_over: %d, ticks: %d)\n",
                 diff, S->game_over, S->ticks);
 #endif
+
+        if(diff >= RESTART_TIMEOUT) {
+            list_destroy(&S->pieces, (FUNCTION_DESTROY)piece_destroy);
+            S->game_over = 0;
+            S->respawn = 1;
+        }
     }
 
     if(S->respawn) {
@@ -1083,11 +1092,21 @@ static void render_graphics(GAME_STATE * S) {
     if (S->game_over) {
         int w = al_get_display_width(S->display);
         int h = al_get_display_height(S->display);
+        int lh = al_get_font_line_height(S->font);
 
         al_draw_text(S->font, pink,
                 w / 2.0, h / 2.0,
                 ALLEGRO_ALIGN_CENTER,
                 "GAME OVER");
+
+        double diff = ticks_to_seconds(S->ticks) - ticks_to_seconds(S->game_over);
+
+        al_draw_textf(S->font, pink,
+                w / 2.0 - 5,
+                h / 2.0 + lh * 2 - 5,
+                ALLEGRO_ALIGN_CENTER,
+                "Restarting in %d seconds...",
+                (int)(RESTART_TIMEOUT - diff));
     }
 
     al_flip_display();
