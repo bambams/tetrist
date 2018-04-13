@@ -1040,8 +1040,10 @@ static void print_frame_diagnostics(GAME_STATE * S) {
 static int process_logic(GAME_STATE * S) {
     S->ticks++;
 
-    apply_input(S, VERTICAL);
     apply_gravity(S);
+    apply_movements(S);
+
+    apply_input(S, VERTICAL);
     apply_movements(S);
 
     apply_input(S, HORIZONTAL);
