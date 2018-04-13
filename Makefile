@@ -8,7 +8,7 @@ ifdef DEBUG
 endif
 
 EXE = ./game
-LIBS = $$(pkg-config --libs $(ALLEGRO_LIBS))
+LIBS = -lm $$(pkg-config --libs $(ALLEGRO_LIBS))
 OBJECTS = $(shell find -maxdepth 1 -name '*.c' | sed -e 's/^/$(BUILDDIR)\//' -e 's/\.c$$/.o/')
 SHELL = ./build-shell.bash
 

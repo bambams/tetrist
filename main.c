@@ -23,6 +23,7 @@
 #include <allegro5/allegro_native_dialog.h>
 #include <allegro5/allegro_primitives.h>
 #include <float.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -101,6 +102,9 @@ typedef struct {
     int move_down;
     int move_left;
     int move_right;
+    int release_down;
+    int release_left;
+    int release_right;
 } PLAYER;
 
 typedef struct {
@@ -255,19 +259,46 @@ int main(int argc, char * argv[])
             case ALLEGRO_EVENT_KEY_UP:
                 S.down = ev.type == ALLEGRO_EVENT_KEY_DOWN;
 
+#if DEBUG
+                fprintf(stderr, "KEY %s: %s\n",
+                        S.down ? "DOWN" : "UP",
+                        al_keycode_to_name(ev.keyboard.keycode));
+#endif
+
                 switch(ev.keyboard.keycode) {
                     case ALLEGRO_KEY_ESCAPE:
                     case ALLEGRO_KEY_Q:
                         S.quit = 1;
                         break;
+                    case ALLEGRO_KEY_LEFT:
+                    case ALLEGRO_KEY_PAD_4:
+                    case ALLEGRO_KEY_A:
                     case ALLEGRO_KEY_H:
-                        S.player.move_left = S.down;
+                        if(S.down) {
+                            S.player.move_left = 1;
+                        } else {
+                            S.player.release_left = 1;
+                        }
                         break;
+                    case ALLEGRO_KEY_DOWN:
+                    case ALLEGRO_KEY_PAD_2:
+                    case ALLEGRO_KEY_S:
                     case ALLEGRO_KEY_J:
-                        S.player.move_down = S.down;
+                        if(S.down) {
+                            S.player.move_down = 1;
+                        } else {
+                            S.player.release_down = 1;
+                        }
                         break;
+                    case ALLEGRO_KEY_RIGHT:
+                    case ALLEGRO_KEY_PAD_6:
+                    case ALLEGRO_KEY_D:
                     case ALLEGRO_KEY_L:
-                        S.player.move_right = S.down;
+                        if(S.down) {
+                            S.player.move_right = 1;
+                        } else {
+                            S.player.release_right = 1;
+                        }
                         break;
                 }
                 break;
@@ -305,6 +336,21 @@ static void apply_input(GAME_STATE * S, INPUT_DIRECTION direction) {
 
     int horizontal = direction & HORIZONTAL;
     int vertical = direction & VERTICAL;
+
+    if(player->release_left) {
+        player->move_left = 0;
+        player->release_left = 0;
+    }
+
+    if(player->release_right) {
+        player->move_right = 0;
+        player->release_right = 0;
+    }
+
+    if(player->release_down) {
+        player->move_down = 0;
+        player->release_down = 0;
+    }
 
 #ifdef DEBUG
     fprintf(stderr, "Applying input: %s%s%s\n", vertical && player->move_down ? "J" : "", horizontal && player->move_left ? "H" : "", horizontal && player->move_right ? "L" : "");
@@ -755,7 +801,7 @@ static GAME_BOARD * game_board_spawn(GAME_STATE * S) {
     bitmap_size->w = w;
     bitmap_size->h = h;
     spawn->x = wt / 2;
-    spawn->y = 0;
+    spawn->y = -1;
     tile_size->w = wt;
     tile_size->h = ht;
 
@@ -1128,7 +1174,7 @@ static void render_graphics(GAME_STATE * S) {
                 h / 2.0 + lh * 2 - 5,
                 ALLEGRO_ALIGN_CENTER,
                 "Restarting in %d seconds...",
-                (int)(RESTART_TIMEOUT - diff));
+                (int)ceil(RESTART_TIMEOUT - diff));
     }
 
     al_flip_display();
