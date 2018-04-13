@@ -337,17 +337,17 @@ static void apply_input(GAME_STATE * S, INPUT_DIRECTION direction) {
     int horizontal = direction & HORIZONTAL;
     int vertical = direction & VERTICAL;
 
-    if(player->release_left) {
+    if(player->release_left && player->move_left < 0) {
         player->move_left = 0;
         player->release_left = 0;
     }
 
-    if(player->release_right) {
+    if(player->release_right && player->move_right < 0) {
         player->move_right = 0;
         player->release_right = 0;
     }
 
-    if(player->release_down) {
+    if(player->release_down && player->move_down < 0) {
         player->move_down = 0;
         player->release_down = 0;
     }
@@ -359,16 +359,19 @@ static void apply_input(GAME_STATE * S, INPUT_DIRECTION direction) {
     if(horizontal) {
         if(player->move_left) {
             next->x -= 1;
+            player->move_left = -1;
         }
 
         if(player->move_right) {
             next->x += 1;
+            player->move_right = -1;
         }
     }
 
     if(vertical) {
         if(player->move_down) {
             next->y += 1;
+            player->move_down = -1;
         }
     }
 }
