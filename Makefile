@@ -4,7 +4,7 @@ CC = gcc
 CFLAGS = $$(pkg-config --cflags $(ALLEGRO_LIBS)) -Wall
 
 ifdef DEBUG
-	CFLAGS += -DDEBUG -g
+	CFLAGS += -DDEBUGX -g
 endif
 
 EXE = ./game

@@ -124,6 +124,7 @@ typedef struct {
     GAME_PIECE * current_piece;
     LINKED_LIST * pieces;
     PLAYER player;
+    TILE_MAP * tile;
 
     struct {
         ALLEGRO_BITMAP * game_board;
@@ -137,13 +138,16 @@ static void apply_movements(GAME_STATE *);
 static void collision_destroy(COLLISION **);
 static COLLISION * collision_spawn(GAME_PIECE *, POINT *, POINT *,
                                    TILE_MAP *, char, int, int);
+static void consume_line(LINKED_LIST *);
 static int create_block(ALLEGRO_BITMAP **, ALLEGRO_COLOR);
 static int create_block_shaded(ALLEGRO_BITMAP **, ALLEGRO_COLOR,
                         ALLEGRO_COLOR, ALLEGRO_COLOR);
+static int create_block_tile(GAME_STATE *, TILE_MAP **);
 static int create_game_board(GAME_STATE *);
 static int create_piece_block(ALLEGRO_BITMAP **, GAME_PIECE_TYPE);
 static int create_sprite(ALLEGRO_BITMAP **, int, int);
 static int deinitialize(GAME_STATE *);
+static int detect_collision_at(GAME_STATE *, POINT, LINKED_LIST **);
 static int detect_collisions(GAME_STATE *, GAME_PIECE *, LINKED_LIST **);
 static void draw_block(ALLEGRO_BITMAP *, int, int);
 static void draw_piece(GAME_STATE *, GAME_PIECE *);
@@ -152,12 +156,13 @@ static void game_board_destroy(GAME_BOARD **);
 static GAME_BOARD * game_board_spawn(GAME_STATE *);
 static int initialize(GAME_STATE *);
 static int initialize_game_board(GAME_STATE *);
-static int map_to_string(char *, char **, int);
 static GAME_PIECE_TYPE next_piece_type(GAME_STATE *);
 static void piece_destroy(GAME_PIECE **);
 static GAME_PIECE * piece_spawn(GAME_STATE *, GAME_PIECE_TYPE);
 static void print_collision(COLLISION *);
 static void print_frame_diagnostics(GAME_STATE *);
+static void process_line(GAME_STATE *, int y);
+static void process_lines(GAME_STATE *);
 static int process_logic(GAME_STATE *);
 static void render_graphics(GAME_STATE *);
 static void reset_movement(GAME_STATE *);
@@ -542,6 +547,14 @@ static int create_game_board(GAME_STATE * S) {
     return 1;
 }
 
+static int create_block_tile(GAME_STATE * S, TILE_MAP ** tile) {
+    if(!tile_map_create(tile, 1, 1, "x")) {
+        return 0;
+    }
+
+    return 1;
+}
+
 static int create_piece_block(ALLEGRO_BITMAP ** block,
                               GAME_PIECE_TYPE type) {
     assert(type >= 0);
@@ -581,9 +594,12 @@ static int deinitialize(GAME_STATE * S)
     ALLEGRO_TIMER ** timer = &S->timer;
     GAME_BOARD ** game_board = &S->game_board;
     LINKED_LIST ** pieces = &S->pieces;
+    TILE_MAP ** tile = &S->tile;
 
     list_destroy(pieces, (FUNCTION_DESTROY)piece_destroy);
     game_board_destroy(game_board);
+
+    tile_map_destroy(tile);
 
     sprite = S->sprites.piece_blocks;
 
@@ -821,6 +837,7 @@ static int initialize(GAME_STATE * S)
     ALLEGRO_FONT ** font = &S->font;
     ALLEGRO_TIMER ** timer = &S->timer;
     GAME_PIECE_TYPE i;
+    TILE_MAP ** tile = &S->tile;
 
     if(!al_init()) {
         return 1;
@@ -884,6 +901,10 @@ static int initialize(GAME_STATE * S)
         }
     }
 
+    if(!create_block_tile(S, tile)) {
+        return 13;
+    }
+
     return 0;
 }
 
@@ -895,31 +916,6 @@ static int initialize_game_board(GAME_STATE * S) {
     if(game_board == NULL) {
         return 0;
     }
-
-    return 1;
-}
-
-static int map_to_string(char * src, char ** dest, int len) {
-    char c;
-    int i;
-
-    *dest = malloc(len + 1);
-
-    if(*dest == NULL) {
-        return 0;
-    }
-
-#ifdef DEBUG
-    fprintf(stderr, "%p malloc :t map_string\n", *dest);
-#endif
-
-    for(i=0; i<len; i++) {
-        c = src[i];
-
-        (*dest)[i] = c == '\0' ? '0' : c;
-    }
-
-    (*dest)[len] = '\0';
 
     return 1;
 }
@@ -1100,6 +1096,132 @@ static void print_frame_diagnostics(GAME_STATE * S) {
     fputc('\n', stderr);
 }
 
+static int detect_collision_at(GAME_STATE * S, POINT point,
+                               LINKED_LIST ** collisions) {
+    COLLISION * collision = NULL;
+    LINKED_LIST * pieces = S->pieces;
+    TILE_MAP * tile = S->tile;
+
+    while(pieces != NULL) {
+        GAME_PIECE * piece = pieces->data;
+        POINT position = piece->position;
+        POINT spot;
+        TILE_MAP * tiles = piece->tiles;
+
+#ifdef DEBUGX
+        char buffer1[1024];
+        char buffer2[1024];
+        char * buffer3 = NULL;
+        char * buffer4 = NULL;
+
+fprintf(stderr,
+        "collision_detected(Point(%d,%d), %s, Point(%d,%d), %s, output spot)\n",
+        point.x, point.y, tile_map_string(tile, (char **)&buffer3, buffer1), position.x, position.y, tile_map_string(tiles, &buffer4, buffer2));
+
+        free(buffer3);
+        free(buffer4);
+#endif
+
+        char detected = collision_detected(point, tile,
+                                           position, tiles,
+                                           &spot);
+
+#ifdef DEBUGX
+        fprintf(stderr,
+                "Line check at {%d,%d} is '%c'\n",
+                point.x, point.y, detected == 0 ? '0' : detected);
+#endif
+
+        if(detected) {
+            collision = collision_spawn(piece, &position, &spot, tiles,
+                                        detected, 0, 0);
+
+            if(collision == NULL) {
+                list_destroy(collisions,
+                             (FUNCTION_DESTROY)collision_destroy);
+                return 0;
+            }
+
+            if(!list_add(collisions, collision)) {
+                collision_destroy(&collision);
+                list_destroy(collisions,
+                             (FUNCTION_DESTROY)collision_destroy);
+                return 0;
+            }
+
+            return 1;
+        }
+
+        pieces = pieces->next;
+    }
+
+    return 0;
+}
+
+static void process_line(GAME_STATE * S, int y) {
+    int w = al_get_display_width(S->display);
+    int tw = w / TILE_SIZE;
+    int x;
+    LINKED_LIST * collisions = NULL;
+    POINT point;
+
+    for (x=0; x<tw; x++) {
+        point.x = x;
+        point.y = y;
+
+#ifdef DEBUGX
+        fprintf(stderr, "process_line() : Point { %d, %d }\n", x, y);
+#endif
+
+        if(!detect_collision_at(S, point, &collisions)) {
+#ifdef DEBUGX
+            fprintf(stderr, "Line is not filled because there's a hole at (%d,%d)\n", x, y);
+#endif
+            goto end;
+        }
+    }
+
+#ifdef DEBUGX
+    fprintf(stderr, "Consuming line %d!", y);
+#endif
+
+    consume_line(collisions);
+
+end:
+    list_destroy(&collisions,
+                 (FUNCTION_DESTROY)collision_destroy);
+
+    return;
+}
+
+static void process_lines(GAME_STATE * S) {
+    int h = al_get_display_height(S->display);
+    int th = h / TILE_SIZE;
+    int y;
+
+    for (y=0; y<th; y++) {
+        process_line(S, y);
+    }
+}
+
+static void consume_line(LINKED_LIST * collisions) {
+    LINKED_LIST * it = collisions;
+
+    while(collisions != NULL) {
+        COLLISION * collision = it->data;
+        GAME_PIECE * piece = collision->piece;
+        TILE_MAP * tiles = piece->tiles;
+        POINT origin = collision->origin;
+        POINT spot = collision->spot;
+        int x = spot.x - origin.x;
+        int y = spot.y - origin.y;
+
+        tile_map_set(tiles, x, y, 0);
+
+        it = it->next;
+    }
+}
+
 static int process_logic(GAME_STATE * S) {
     S->ticks++;
 
@@ -1109,6 +1231,10 @@ static int process_logic(GAME_STATE * S) {
 
     apply_input(S, HORIZONTAL);
     apply_movements(S);
+
+    if(S->respawn) {
+        process_lines(S);
+    }
 
     if(S->game_over)
     {

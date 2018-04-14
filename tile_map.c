@@ -23,6 +23,31 @@
 
 #include "tile_map.h"
 
+int map_to_string(char * src, char ** dest, int len) {
+    char c;
+    int i;
+
+    *dest = malloc(len + 1);
+
+    if(*dest == NULL) {
+        return 0;
+    }
+
+#ifdef DEBUG
+    fprintf(stderr, "%p malloc :t map_string\n", *dest);
+#endif
+
+    for(i=0; i<len; i++) {
+        c = src[i];
+
+        (*dest)[i] = c == '\0' ? '0' : c;
+    }
+
+    (*dest)[len] = '\0';
+
+    return 1;
+}
+
 int tile_map_create(TILE_MAP ** tiles, int w, int h,
                     const char * const map) {
     assert(tiles);
@@ -131,4 +156,10 @@ char tile_map_set_aux(char * const map, int w, int x, int y, char flag) {
     map[i] = flag;
 
     return old;
+}
+
+const char const * tile_map_string(TILE_MAP * tiles, char ** buffer1, char * buffer2) {
+    map_to_string(tiles->map, buffer1, tiles->size.w * tiles->size.h);
+    sprintf(buffer2, "Tile = { size: { %d, %d }, map = '%s' }", tiles->size.w, tiles->size.h, *buffer1);
+    return buffer2;
 }

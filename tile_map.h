@@ -32,11 +32,13 @@ struct TILE_MAP {
     char * map;
 };
 
+int map_to_string(char *, char **, int);
 int tile_map_create(TILE_MAP **, int, int, const char * const);
 void tile_map_destroy(TILE_MAP **);
 char tile_map_get(TILE_MAP *, int, int);
 char tile_map_get_aux(const char * const, int, int, int);
 char tile_map_set(TILE_MAP *, int, int, char);
 char tile_map_set_aux(char * const, int, int, int, char);
+const char const * tile_map_string(TILE_MAP *, char **, char *);
 
 #endif
