@@ -12,17 +12,17 @@ rotate pieces. Filled lines are also not yet cleared. When collision
 occurs at the top of the game board game-over is declared, and a timer is
 presented counting down to a new game starting.
 
-= TODO =
+# TODO
 
 The basic missing functionality is:
 
-- Player being able to rotate the blocks.
-  - Collision detection working with rotated blocks (either we can store
-    the various possible rotated collision maps, or figure out how to do
-    the calculations on a rotated map)..
-- Clearing filled lines.
-- Counting the player's score.
-- Storing a scoreboard.
+- [ ] Player being able to rotate the blocks.
+  - [ ] Collision detection working with rotated blocks (either we can
+          store the various possible rotated collision maps, or figure out
+          how to do the calculations on a rotated map)..
+- [ ] Clearing filled lines.
+- [ ] Counting the player's score.
+- [ ] Storing a scoreboard.
 
 Extended functionality:
 
@@ -31,37 +31,37 @@ Extended functionality:
 - Pixel-based graphics and logic (as opposed to tile-based).
 - "Flare" (unique ideas to set it apart from other games/clones).
 
-= INSTALL =
+# INSTALL
 
-== Dependencies ==
+## Dependencies
 
 To build the program you will need Allegro 5 installed. See liballeg.org
 (official site) or allegro.cc (community forum) for details.
 
-== Makefile (Unix-like) ==
+## Makefile (Unix-like)
 
 You will need make (development is using GNU make, but in theory it
 doesn't matter). While the program should compile and run on Windows, the
 makefile is probably Unix-like specific and depending on various Unix
 utilities.
 
-$ make
+    $ make
 
 The makefile supports various targets for convenience, such as `rebuild',
 'run', and 'rerun'. To run the game you can either invoke an appropriate
 Makefile target to run it from within make, or just execute the game
 directly.
 
-$ make run
-$ # OR
-$ ./game
+    $ make run
+    $ # OR
+    $ ./game
 
-== Compiling (Alternative) ==
+## Compiling (Alternative)
 
 If the Makefile doesn't work on your platform you can always just compile
 all the *.c files manually. Then just execute the resulting program.
 
-= COPYRIGHT =
+# COPYRIGHT
 
 Tetrist is a falling block game.
 Copyright (C) 2018 Brandon McCaig
