@@ -1,4 +1,8 @@
+.vs
 .build/
 *.o
 *.test
+*.user
+Debug/
 game
+packages/

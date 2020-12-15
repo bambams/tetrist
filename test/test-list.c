@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "list.h"
+#include "../list.h"
 
 typedef int (*PREDICATE)(LINKED_LIST *, LINKED_LIST *, void *);
 
