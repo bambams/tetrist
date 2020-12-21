@@ -1,4 +1,9 @@
-.build/
 *.o
 *.test
+*.user
+.build/
+.vs
+Debug
 game
+game.exe
+packages/

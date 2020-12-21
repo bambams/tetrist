@@ -224,7 +224,7 @@ static const char type_names[] = {
     'I','J','L','O', 'S','T','Z'
 };
 
-int main(int argc, char * argv[])
+int main(int argc, char ** argv)
 {
     GAME_STATE S;
 
